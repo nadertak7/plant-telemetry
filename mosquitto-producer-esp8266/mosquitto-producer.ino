@@ -23,9 +23,9 @@ const char* MQTT_CLIENT_ID_VALUE = "ESP8266_Sensor_01";
 const char* MQTT_PUBLISH_TOPIC = "livingroom/plant1";
 
 // Time settings
-const int WIFI_RETRY_DELAY = 5000;
-const int MQTT_RETRY_DELAY = 5000;
-const int SEND_INTERVAL = 5000;
+const int WIFI_RETRY_DELAY = 500;
+const int MQTT_RETRY_DELAY = 500;
+const int SEND_INTERVAL = 500;
 unsigned long lastSendTime = 0;
 
 void connect_wifi() {
@@ -36,7 +36,7 @@ void connect_wifi() {
   WiFi.begin(WIFI_SSID_VALUE, WIFI_PASS_VALUE);
 
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
+    delay(WIFI_RETRY_DELAY);
     Serial.print(".");
   }
   Serial.println("WiFi connected...");
