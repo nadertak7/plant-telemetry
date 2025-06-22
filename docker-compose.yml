@@ -1,0 +1,11 @@
+services:
+  mosquitto-broker:
+    container_name: mosquitto-broker
+    build: ./mosquitto-broker
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto-broker/config:/mosquitto/config:rw
+      - ./mosquitto-broker/data:/mosquitto/data
+      - ./mosquitto-broker/log:/mosquitto/log
+    restart: unless-stopped
