@@ -93,5 +93,5 @@ void loop() {
   }
 
   String payload = get_moisture_reading();
-  client.publish(MQTT_PUBLISH_TOPIC, payload.c_str(), true, 1);  // 'true' arg ensures message retention
+  client.publish(MQTT_PUBLISH_TOPIC, payload.c_str(), true);  // 'true' arg ensures message retention
 }
