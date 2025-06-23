@@ -59,11 +59,19 @@ void connect_mqtt() {
   }
 }
 
+void sync_time() {
+  configTime(TIMEZONE, NTP_SERVER);
+  while (time(nullptr) < 57600) { // Less than epoch (suggests unsuccessful sync)
+    delay(500);
+    Serial.println("Time synchronised...");
+  }
+}
+
 String get_formatted_timestamp() {
-  char time_str[30];
+  char timeStr[30];
   time_t now = time(nullptr);
-  strftime(time_str, sizeof(time_str), "%Y-%m-%dT%H:%M:%SZ", gmtime(&now));
-  return String(time_str);
+  strftime(timeStr, sizeof(timeStr), "%Y-%m-%dT%H:%M:%SZ", gmtime(&now));
+  return String(timeStr);
 }
 
 String get_moisture_reading() {
@@ -91,15 +99,8 @@ void setup() {
   while (!Serial) {
     ;
   }
-
   connect_wifi();
-
-  configTime(TIMEZONE, NTP_SERVER);
-  while (time(nullptr) < 8 * 3600 * 2) {
-    delay(500);
-    Serial.print(".");
-  }
-
+  sync_time();
   client.setServer(MQTT_BROKER_IP_VALUE, 1883);
   connect_mqtt();
 }
