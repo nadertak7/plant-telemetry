@@ -29,7 +29,7 @@ const int TIME_SYNC_MAX_RETRIES = 5;
 
 // Time settings
 const int SLEEP_DURATION_SECS = 10;
-const int WIFI_RETRY_DELAY_MS = 500;
+const int WIFI_RETRY_DELAY_MS = 1000;
 const int MQTT_RETRY_DELAY_MS = 500;
 const int TIME_SYNC_RETRY_DELAY_MS = 500;
 // NTP specific time settings
@@ -43,7 +43,7 @@ bool connect_wifi() {
   WiFi.begin(WIFI_SSID_VALUE, WIFI_PASS_VALUE);
   for (int i = 0; i < WIFI_MAX_RETRIES; i++) {
     if (WiFi.status() == WL_CONNECTED) {
-      Serial.println("WiFi connected...");
+      Serial.println("\nWiFi connected...");
       return true;
     }
     else {
@@ -51,7 +51,7 @@ bool connect_wifi() {
       delay(WIFI_RETRY_DELAY_MS);
     }
   }
-  Serial.println("Error: Failed to connect to wifi.");
+  Serial.println("\nError: Failed to connect to wifi.");
   return false;
 }
 
@@ -60,7 +60,7 @@ bool connect_mqtt() {
   client.setServer(MQTT_BROKER_IP_VALUE, 1883);
   for (int i = 0; i < MQTT_MAX_RETRIES; i++) {
     if (client.connect(MQTT_CLIENT_ID_VALUE, MQTT_USERNAME_VALUE, MQTT_PASSWORD_VALUE)) {
-      Serial.println("Connected to MQTT....");
+      Serial.println("\nConnected to MQTT....");
       return true;
     }
     else {
@@ -68,7 +68,7 @@ bool connect_mqtt() {
       delay(MQTT_RETRY_DELAY_MS);
     }
   }
-  Serial.println("Error: Failed to connect to MQTT.");
+  Serial.println("\nError: Failed to connect to MQTT.");
   return false;
 }
 
@@ -77,7 +77,7 @@ bool sync_time() {
   configTime(TIMEZONE, NTP_SERVER);
   for (int i = 0; i < TIME_SYNC_MAX_RETRIES; i++) {
     if (time(nullptr) > MIN_VALID_TIME_SYNC) { // Later than 2025 (suggests unsuccessful sync)
-      Serial.println("Time synced...");
+      Serial.println("\nTime synced...");
       return true;
     }
     else {
@@ -85,7 +85,7 @@ bool sync_time() {
       delay(TIME_SYNC_RETRY_DELAY_MS);
     }
   }
-  Serial.println("Error: Failed to sync time from NTP server...");
+  Serial.println("\nError: Failed to sync time from NTP server...");
   return false;
 }
 
@@ -118,13 +118,15 @@ String get_moisture_reading() {
 void setup() {
   Serial.begin(115200);
   while (!Serial) {} // Wait for serial to initialise
-
+  
   if (connect_wifi() && connect_mqtt() && sync_time()) {
     String payload = get_moisture_reading();
     client.publish(MQTT_PUBLISH_TOPIC, payload.c_str(), true);
+    Serial.println("Published message to MQTT broker...");
   }
-
+  
   // Prepare for deep sleep
+  Serial.println("Sleeping...");
   client.disconnect();
   WiFi.disconnect();
   delay(100); // Give MQTT time to send before sleeping
