@@ -28,7 +28,6 @@ const int WIFI_MAX_RETRIES = 5;
 const int TIME_SYNC_MAX_RETRIES = 5;
 
 // Time settings
-const int SLEEP_DURATION_SECS = 10;
 const int WIFI_RETRY_DELAY_MS = 1000;
 const int MQTT_RETRY_DELAY_MS = 500;
 const int TIME_SYNC_RETRY_DELAY_MS = 500;
@@ -36,6 +35,8 @@ const int TIME_SYNC_RETRY_DELAY_MS = 500;
 const char* NTP_SERVER = "pool.ntp.org";
 const char* TIMEZONE = "UTC0";
 const long MIN_VALID_TIME_SYNC = 1735689600L; // 1st January 2025
+const int SLEEP_DURATION_ERROR_SECS = 10;
+const int SLEEP_DURATION_SUCCESS_SECS = 60;
 
 bool connect_wifi() {
   Serial.println();
@@ -85,7 +86,7 @@ bool sync_time() {
       delay(TIME_SYNC_RETRY_DELAY_MS);
     }
   }
-  Serial.println("\nError: Failed to sync time from NTP server...");
+  Serial.println("\nError: Failed to sync time from NTP server.");
   return false;
 }
 
@@ -116,21 +117,26 @@ String get_moisture_reading() {
 }
 
 void setup() {
+  bool success = false; // Determines how long ESP should sleep for
   Serial.begin(115200);
   while (!Serial) {} // Wait for serial to initialise
-  
+
   if (connect_wifi() && connect_mqtt() && sync_time()) {
     String payload = get_moisture_reading();
     client.publish(MQTT_PUBLISH_TOPIC, payload.c_str(), true);
     Serial.println("Published message to MQTT broker...");
+    success = true;
   }
-  
+
   // Prepare for deep sleep
   Serial.println("Sleeping...");
   client.disconnect();
   WiFi.disconnect();
   delay(100); // Give MQTT time to send before sleeping
-  ESP.deepSleep(SLEEP_DURATION_SECS * 1000000); // Time in microseconds
+
+  // Variably configure sleep time based on message being published successfully
+  int sleep_duration_secs = success ? SLEEP_DURATION_SUCCESS_SECS : SLEEP_DURATION_ERROR_SECS;
+  ESP.deepSleep(sleep_duration_secs * 1000000); // Time in microseconds
 }
 
 void loop() {
