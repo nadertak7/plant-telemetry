@@ -76,7 +76,7 @@ bool sync_time() {
   Serial.print("Syncing time from NTP server...");
   configTime(TIMEZONE, NTP_SERVER);
   for (int i = 0; i < TIME_SYNC_MAX_RETRIES; i++) {
-    if (time(nullptr) > MIN_VALID_TIME_SYNC) { // Later than 2025 (suggests unsuccessful sync)
+    if (time(nullptr) > MIN_VALID_TIME_SYNC) { // Later than 2025 (suggests successful sync)
       Serial.println("\nTime synced...");
       return true;
     }
