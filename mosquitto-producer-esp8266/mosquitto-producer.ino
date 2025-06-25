@@ -8,6 +8,8 @@ PubSubClient client(wifiClient);
 
 // Sensor settings
 const int MOISTURE_SENSOR_PIN = A0;
+const char* MQTT_CLIENT_ID_VALUE = "ESP8266_Sensor_01";
+const char* MQTT_PUBLISH_TOPIC = "livingroom/plant1";
 const int DRY_VALUE = 666;
 const int WET_VALUE = 272;
 
@@ -19,52 +21,72 @@ const char* WIFI_PASS_VALUE = WIFI_PASS;
 const char* MQTT_BROKER_IP_VALUE = MQTT_BROKER_IP;
 const char* MQTT_USERNAME_VALUE = MQTT_USERNAME;
 const char* MQTT_PASSWORD_VALUE = MQTT_PASSWORD;
-const char* MQTT_CLIENT_ID_VALUE = "ESP8266_Sensor_01";
-const char* MQTT_PUBLISH_TOPIC = "livingroom/plant1";
+
+// Retry settings
+const int MQTT_MAX_RETRIES = 5;
+const int WIFI_MAX_RETRIES = 5;
+const int TIME_SYNC_MAX_RETRIES = 5;
 
 // Time settings
-const int WIFI_RETRY_DELAY = 500;
-const int MQTT_RETRY_DELAY = 500;
-const int SEND_INTERVAL = 500;
-unsigned long lastSendTime = 0;
+const int SLEEP_DURATION_SECS = 10;
+const int WIFI_RETRY_DELAY_MS = 500;
+const int MQTT_RETRY_DELAY_MS = 500;
+const int TIME_SYNC_RETRY_DELAY_MS = 500;
 // NTP specific time settings
 const char* NTP_SERVER = "pool.ntp.org";
 const char* TIMEZONE = "UTC0";
+const long MIN_VALID_TIME_SYNC = 1735689600L; // 1st January 2025
 
-void connect_wifi() {
+bool connect_wifi() {
   Serial.println();
-  Serial.print("Connecting to Wifi network ");
-  Serial.println(WIFI_SSID_VALUE);
-
+  Serial.print("Connecting to Wifi network...");
   WiFi.begin(WIFI_SSID_VALUE, WIFI_PASS_VALUE);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(WIFI_RETRY_DELAY);
-    Serial.print(".");
-  }
-  Serial.println("WiFi connected...");
-}
-
-void connect_mqtt() {
-  while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
-    if (client.connect(MQTT_CLIENT_ID_VALUE, MQTT_USERNAME_VALUE, MQTT_PASSWORD_VALUE)) {
-      Serial.println("Connected to MQTT Broker...");
-    } else {
-      Serial.print("MQTT connection failed. Error code = ");
-      Serial.println(client.state());
-      Serial.println("Retrying...");
-      delay(MQTT_RETRY_DELAY);
+  for (int i = 0; i < WIFI_MAX_RETRIES; i++) {
+    if (WiFi.status() == WL_CONNECTED) {
+      Serial.println("WiFi connected...");
+      return true;
+    }
+    else {
+      Serial.print("."); // Heartbeat
+      delay(WIFI_RETRY_DELAY_MS);
     }
   }
+  Serial.println("Error: Failed to connect to wifi.");
+  return false;
 }
 
-void sync_time() {
-  configTime(TIMEZONE, NTP_SERVER);
-  while (time(nullptr) < 57600) { // Less than epoch (suggests unsuccessful sync)
-    delay(500);
-    Serial.println("Time synchronised...");
+bool connect_mqtt() {
+  Serial.print("Connecting to MQTT...");
+  client.setServer(MQTT_BROKER_IP_VALUE, 1883);
+  for (int i = 0; i < MQTT_MAX_RETRIES; i++) {
+    if (client.connect(MQTT_CLIENT_ID_VALUE, MQTT_USERNAME_VALUE, MQTT_PASSWORD_VALUE)) {
+      Serial.println("Connected to MQTT....");
+      return true;
+    }
+    else {
+      Serial.print("."); // Heartbeat
+      delay(MQTT_RETRY_DELAY_MS);
+    }
   }
+  Serial.println("Error: Failed to connect to MQTT.");
+  return false;
+}
+
+bool sync_time() {
+  Serial.print("Syncing time from NTP server...");
+  configTime(TIMEZONE, NTP_SERVER);
+  for (int i = 0; i < TIME_SYNC_MAX_RETRIES; i++) {
+    if (time(nullptr) > MIN_VALID_TIME_SYNC) { // Later than 2025 (suggests unsuccessful sync)
+      Serial.println("Time synced...");
+      return true;
+    }
+    else {
+      Serial.print("."); // Heartbeat
+      delay(TIME_SYNC_RETRY_DELAY_MS);
+    }
+  }
+  Serial.println("Error: Failed to sync time from NTP server...");
+  return false;
 }
 
 String get_formatted_timestamp() {
@@ -90,31 +112,25 @@ String get_moisture_reading() {
   moistureData += "\"raw\":" + String(rawMoistureValue) + ",";
   moistureData += "\"percentage\":" + String(moisturePercentage);
   moistureData += "}";
-
   return moistureData;
 }
 
 void setup() {
   Serial.begin(115200);
-  while (!Serial) {
-    ;
+  while (!Serial) {} // Wait for serial to initialise
+
+  if (connect_wifi() && connect_mqtt() && sync_time()) {
+    String payload = get_moisture_reading();
+    client.publish(MQTT_PUBLISH_TOPIC, payload.c_str(), true);
   }
-  connect_wifi();
-  sync_time();
-  client.setServer(MQTT_BROKER_IP_VALUE, 1883);
-  connect_mqtt();
+
+  // Prepare for deep sleep
+  client.disconnect();
+  WiFi.disconnect();
+  delay(100); // Give MQTT time to send before sleeping
+  ESP.deepSleep(SLEEP_DURATION_SECS * 1000000); // Time in microseconds
 }
 
 void loop() {
-  // In case mqtt connection is no longer active
-  if (!client.connected()) {
-    connect_mqtt();
-  }
-
-  unsigned long now = millis();
-  if (now - lastSendTime > SEND_INTERVAL) {
-    lastSendTime = now;
-    String payload = get_moisture_reading();
-    client.publish(MQTT_PUBLISH_TOPIC, payload.c_str(), true);  // 'true' arg ensures message retention
-  }
+  // No need for loop as ESP resets after deep sleep
 }
