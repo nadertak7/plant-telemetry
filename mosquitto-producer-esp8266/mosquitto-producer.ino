@@ -9,7 +9,7 @@ PubSubClient client(wifiClient);
 // Sensor settings
 const int MOISTURE_SENSOR_PIN = A0;
 const char* MQTT_CLIENT_ID_VALUE = "ESP8266_Sensor_01";
-const char* MQTT_PUBLISH_TOPIC = "plant-monitoring/living-room/scarlet-star-1";
+const char* MQTT_PUBLISH_TOPIC = "plant-monitoring/living-room/scarlet-star-1/telemetry";
 const int DRY_VALUE = 666;
 const int WET_VALUE = 272;
 
