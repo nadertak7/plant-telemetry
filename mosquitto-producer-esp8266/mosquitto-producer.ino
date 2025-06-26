@@ -1,145 +1,141 @@
+#include <time.h>
+
+#include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include "wifi_secrets.h"
-#include <time.h>
-#include <ArduinoJson.h>
 
-WiFiClient wifiClient;
-PubSubClient client(wifiClient);
+#include "wifi_secrets.h"
+
+WiFiClient g_wifi_client;
+PubSubClient g_client(g_wifi_client);
 
 // Sensor settings
-const int MOISTURE_SENSOR_PIN = A0;
-const char* MQTT_CLIENT_ID_VALUE = "ESP8266_Sensor_01";
-const char* MQTT_PUBLISH_TOPIC = "plant-monitoring/living-room/scarlet-star-1/telemetry";
-const int DRY_VALUE = 666;
-const int WET_VALUE = 272;
+const int kMoistureSensorPin = A0;
+const char* kMqttClientId = "ESP8266_Sensor_01";
+const char* kMqttTopic = "plant-monitoring/living-room/scarlet-star-1/telemetry";
+const int kAdcValueDry = 666;
+const int kAdcValueWet = 272;
 
 // Wifi Secrets from wifi_secrets.h
-const char* WIFI_SSID_VALUE = WIFI_SSID;
-const char* WIFI_PASS_VALUE = WIFI_PASS;
+const char* kWifiSsid = WIFI_SSID;
+const char* kWifiPassword = WIFI_PASS;
 
 // MQTT settings
-const char* MQTT_BROKER_IP_VALUE = MQTT_BROKER_IP;
-const char* MQTT_USERNAME_VALUE = MQTT_USERNAME;
-const char* MQTT_PASSWORD_VALUE = MQTT_PASSWORD;
+const char* kMqttBrokerAddress = MQTT_BROKER_IP;
+const char* kMqttUsername = MQTT_USERNAME;
+const char* kMqttPassword = MQTT_PASSWORD;
 
 // Retry settings
-const int MQTT_MAX_RETRIES = 5;
-const int WIFI_MAX_RETRIES = 5;
-const int TIME_SYNC_MAX_RETRIES = 5;
+const int kMqttMaxRetries = 5;
+const int kWifiMaxRetries = 5;
+const int kTimeSyncMaxRetries = 5;
 
 // Time settings
-const int WIFI_RETRY_DELAY_MS = 1000;
-const int MQTT_RETRY_DELAY_MS = 500;
-const int TIME_SYNC_RETRY_DELAY_MS = 500;
+const int kWifiRetryDelayMs = 1000;
+const int kMqttRetryDelayMs = 500;
+const int kTimeSyncRetryDelayMs = 500;
 // NTP specific time settings
-const char* NTP_SERVER = "pool.ntp.org";
-const char* TIMEZONE = "UTC0";
-const long MIN_VALID_TIME_SYNC = 1735689600L; // 1st January 2025
-const int SLEEP_DURATION_ERROR_SECS = 10;
-const int SLEEP_DURATION_SUCCESS_SECS = 60;
+const char* kNtpServer = "pool.ntp.org";
+const char* kNtpTimezone = "UTC0";
+const long kMinValidTimeUnix = 1735689600L; // 1st January 2025
+const int kSleepDurationSuccessSecs = 60;
+const int kSleepDurationErrorSecs = 10;
 
-void log_retry_attempt(int iterator, const int max_retry) {
-  Serial.printf("Failed attempt %d of %d...\n", iterator + 1, max_retry);
+void LogRetryAttempt(int attempt_index, const int max_retry) {
+  Serial.printf("Failed attempt %d of %d...\n", attempt_index + 1, max_retry);
 }
 
-bool connect_wifi() {
+bool ConnectWifi() {
   Serial.print("\nConnecting to Wifi network...");
-  WiFi.begin(WIFI_SSID_VALUE, WIFI_PASS_VALUE);
-  for (int i = 0; i < WIFI_MAX_RETRIES; i++) {
+  WiFi.begin(kWifiSsid, kWifiPassword);
+  for (int i = 0; i < kWifiMaxRetries; i++) {
     if (WiFi.status() == WL_CONNECTED) {
       Serial.println("\nWiFi connected...");
       return true;
     }
-    else {
-      log_retry_attempt(i, WIFI_MAX_RETRIES);
-      delay(WIFI_RETRY_DELAY_MS);
-    }
+    LogRetryAttempt(i, kWifiMaxRetries);
+    delay(kWifiRetryDelayMs);
   }
   Serial.println("\nError: Failed to connect to wifi.");
   return false;
 }
 
-bool connect_mqtt() {
+bool ConnectMqtt() {
   Serial.print("Connecting to MQTT...");
-  client.setServer(MQTT_BROKER_IP_VALUE, 1883);
-  for (int i = 0; i < MQTT_MAX_RETRIES; i++) {
-    if (client.connect(MQTT_CLIENT_ID_VALUE, MQTT_USERNAME_VALUE, MQTT_PASSWORD_VALUE)) {
+  g_client.setServer(kMqttBrokerAddress, 1883);
+  for (int i = 0; i < kMqttMaxRetries; i++) {
+    if (g_client.connect(kMqttClientId, kMqttUsername, kMqttPassword)) {
       Serial.println("\nConnected to MQTT....");
       return true;
     }
-    else {
-      log_retry_attempt(i, MQTT_MAX_RETRIES);
-      delay(MQTT_RETRY_DELAY_MS);
-    }
+    LogRetryAttempt(i, kMqttMaxRetries);
+    delay(kMqttRetryDelayMs);
   }
   Serial.println("\nError: Failed to connect to MQTT.");
   return false;
 }
 
-bool sync_time() {
+bool SyncTime() {
   Serial.print("Syncing time from NTP server...");
-  configTime(TIMEZONE, NTP_SERVER);
-  for (int i = 0; i < TIME_SYNC_MAX_RETRIES; i++) {
-    if (time(nullptr) > MIN_VALID_TIME_SYNC) { // Later than 2025 (suggests successful sync)
+  configTime(kNtpTimezone, kNtpServer);
+  for (int i = 0; i < kTimeSyncMaxRetries; i++) {
+    if (time(nullptr) > kMinValidTimeUnix) { // Later than 2025 (suggests successful sync)
       Serial.println("\nTime synced...");
       return true;
     }
-    else {
-      log_retry_attempt(i, TIME_SYNC_MAX_RETRIES);
-      delay(TIME_SYNC_RETRY_DELAY_MS);
-    }
+    LogRetryAttempt(i, kTimeSyncMaxRetries);
+    delay(kTimeSyncRetryDelayMs);
   }
   Serial.println("\nError: Failed to sync time from NTP server.");
   return false;
 }
 
-String get_formatted_timestamp() {
-  char timeStr[30];
+String GetFormattedTimestamp() {
+  char time_str[30];
   time_t now = time(nullptr);
-  strftime(timeStr, sizeof(timeStr), "%Y-%m-%dT%H:%M:%SZ", gmtime(&now));
-  return String(timeStr);
+  strftime(time_str, sizeof(time_str), "%Y-%m-%dT%H:%M:%SZ", gmtime(&now));
+  return String(time_str);
 }
 
-String get_moisture_reading() {
+String GetMoistureReading() {
   // Take sensor reading
-  int rawMoistureValue = analogRead(MOISTURE_SENSOR_PIN);
-  int moisturePercentage = map(rawMoistureValue, DRY_VALUE, WET_VALUE, 0, 100);
+  int adc_value_reading = analogRead(kMoistureSensorPin);
+  int moisture_percentage = map(adc_value_reading, kAdcValueDry, kAdcValueWet, 0, 100);
   // In case moisture percentage falls outside of 0-100 range
-  moisturePercentage = constrain(moisturePercentage, 0, 100);
+  moisture_percentage = constrain(moisture_percentage, 0, 100);
 
   // Create json document
-  StaticJsonDocument<256> jsonDoc;
-  jsonDoc["timestamp"] = get_formatted_timestamp();
-  jsonDoc["moisture_raw"] = rawMoistureValue;
-  jsonDoc["moisture_perc"] = moisturePercentage;
-  jsonDoc["dry_value"] = DRY_VALUE;
-  jsonDoc["wet_value"] = WET_VALUE;
-  String jsonPayload;
-  serializeJson(jsonDoc, jsonPayload);
-  return jsonPayload;
+  StaticJsonDocument<256> json_doc;
+  json_doc["timestamp"] = GetFormattedTimestamp();
+  json_doc["adc_value"] = adc_value_reading;
+  json_doc["dry_value"] = kAdcValueDry;
+  json_doc["wet_value"] = kAdcValueWet;
+  json_doc["moisture_perc"] = moisture_percentage;
+  String json_payload;
+  serializeJson(json_doc, json_payload);
+  return json_payload;
 }
 
 void setup() {
-  bool success = false; // Determines how long ESP should sleep for
+  bool is_task_successful = false; // Determines how long ESP should sleep for
   Serial.begin(115200);
   while (!Serial) {} // Wait for serial to initialise
 
-  if (connect_wifi() && connect_mqtt() && sync_time()) {
-    String payload = get_moisture_reading();
-    client.publish(MQTT_PUBLISH_TOPIC, payload.c_str(), true);
+  if (ConnectWifi() && ConnectMqtt() && SyncTime()) {
+    String payload = GetMoistureReading();
+    g_client.publish(kMqttTopic, payload.c_str(), true);
     Serial.println("Published message to MQTT broker...");
-    success = true;
+    is_task_successful = true;
   }
 
   // Prepare for deep sleep
   Serial.println("Sleeping...");
-  client.disconnect();
+  g_client.disconnect();
   WiFi.disconnect();
   delay(100); // Give MQTT time to send before sleeping
 
   // Variably configure sleep time based on message being published successfully
-  int sleepDurationSecs = success ? SLEEP_DURATION_SUCCESS_SECS : SLEEP_DURATION_ERROR_SECS;
+  int sleepDurationSecs = is_task_successful ? kSleepDurationSuccessSecs : kSleepDurationErrorSecs;
   ESP.deepSleep(sleepDurationSecs * 1000000); // Time in microseconds
 }
 
