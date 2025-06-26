@@ -2,6 +2,7 @@
 #include <PubSubClient.h>
 #include "wifi_secrets.h"
 #include <time.h>
+#include <ArduinoJson.h>
 
 WiFiClient wifiClient;
 PubSubClient client(wifiClient);
@@ -101,24 +102,22 @@ String get_formatted_timestamp() {
 }
 
 String get_moisture_reading() {
-  // Get timestamp from function
-  String timestamp = get_formatted_timestamp();
-
   // Take sensor reading
   int rawMoistureValue = analogRead(MOISTURE_SENSOR_PIN);
   int moisturePercentage = map(rawMoistureValue, DRY_VALUE, WET_VALUE, 0, 100);
   // In case moisture percentage falls outside of 0-100 range
   moisturePercentage = constrain(moisturePercentage, 0, 100);
 
-  // Compile into json
-  String moistureData = "{";
-  moistureData += "\"timestamp\":\"" + timestamp + "\",";
-  moistureData += "\"moisture_value\":" + String(rawMoistureValue) + ",";
-  moistureData += "\"moisture_percentage\":" + String(moisturePercentage);
-  moistureData += "\"dry_value\":" + String(DRY_VALUE) + ",";
-  moistureData += "\"wet_value\":" + String(WET_VALUE);
-  moistureData += "}";
-  return moistureData;
+  // Create json document
+  StaticJsonDocument<256> jsonDoc;
+  jsonDoc["timestamp"] = get_formatted_timestamp();
+  jsonDoc["moisture_raw"] = rawMoistureValue;
+  jsonDoc["moisture_perc"] = moisturePercentage;
+  jsonDoc["dry_value"] = DRY_VALUE;
+  jsonDoc["wet_value"] = WET_VALUE;
+  String jsonPayload;
+  serializeJson(jsonDoc, jsonPayload);
+  return jsonPayload;
 }
 
 void setup() {
@@ -140,8 +139,8 @@ void setup() {
   delay(100); // Give MQTT time to send before sleeping
 
   // Variably configure sleep time based on message being published successfully
-  int sleep_duration_secs = success ? SLEEP_DURATION_SUCCESS_SECS : SLEEP_DURATION_ERROR_SECS;
-  ESP.deepSleep(sleep_duration_secs * 1000000); // Time in microseconds
+  int sleepDurationSecs = success ? SLEEP_DURATION_SUCCESS_SECS : SLEEP_DURATION_ERROR_SECS;
+  ESP.deepSleep(sleepDurationSecs * 1000000); // Time in microseconds
 }
 
 void loop() {
