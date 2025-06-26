@@ -113,8 +113,10 @@ String get_moisture_reading() {
   // Compile into json
   String moistureData = "{";
   moistureData += "\"timestamp\":\"" + timestamp + "\",";
-  moistureData += "\"raw\":" + String(rawMoistureValue) + ",";
-  moistureData += "\"percentage\":" + String(moisturePercentage);
+  moistureData += "\"moisture_value\":" + String(rawMoistureValue) + ",";
+  moistureData += "\"moisture_percentage\":" + String(moisturePercentage);
+  moistureData += "\"dry_value\":" + String(DRY_VALUE) + ",";
+  moistureData += "\"wet_value\":" + String(WET_VALUE);
   moistureData += "}";
   return moistureData;
 }
