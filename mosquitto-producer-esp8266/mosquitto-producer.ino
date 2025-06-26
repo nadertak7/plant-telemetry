@@ -39,8 +39,7 @@ const int SLEEP_DURATION_ERROR_SECS = 10;
 const int SLEEP_DURATION_SUCCESS_SECS = 60;
 
 bool connect_wifi() {
-  Serial.println();
-  Serial.print("Connecting to Wifi network...");
+  Serial.print("\nConnecting to Wifi network...");
   WiFi.begin(WIFI_SSID_VALUE, WIFI_PASS_VALUE);
   for (int i = 0; i < WIFI_MAX_RETRIES; i++) {
     if (WiFi.status() == WL_CONNECTED) {
