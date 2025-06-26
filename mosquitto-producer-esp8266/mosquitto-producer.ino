@@ -38,6 +38,10 @@ const long MIN_VALID_TIME_SYNC = 1735689600L; // 1st January 2025
 const int SLEEP_DURATION_ERROR_SECS = 10;
 const int SLEEP_DURATION_SUCCESS_SECS = 60;
 
+void log_retry_attempt(int iterator, const int max_retry) {
+  Serial.printf("Failed attempt %d of %d...\n", iterator + 1, max_retry);
+}
+
 bool connect_wifi() {
   Serial.print("\nConnecting to Wifi network...");
   WiFi.begin(WIFI_SSID_VALUE, WIFI_PASS_VALUE);
@@ -47,7 +51,7 @@ bool connect_wifi() {
       return true;
     }
     else {
-      Serial.print("."); // Heartbeat
+      log_retry_attempt(i, WIFI_MAX_RETRIES);
       delay(WIFI_RETRY_DELAY_MS);
     }
   }
@@ -64,7 +68,7 @@ bool connect_mqtt() {
       return true;
     }
     else {
-      Serial.print("."); // Heartbeat
+      log_retry_attempt(i, MQTT_MAX_RETRIES);
       delay(MQTT_RETRY_DELAY_MS);
     }
   }
@@ -81,7 +85,7 @@ bool sync_time() {
       return true;
     }
     else {
-      Serial.print("."); // Heartbeat
+      log_retry_attempt(i, TIME_SYNC_MAX_RETRIES);
       delay(TIME_SYNC_RETRY_DELAY_MS);
     }
   }
