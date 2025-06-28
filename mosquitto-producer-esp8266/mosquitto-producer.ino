@@ -52,12 +52,12 @@ bool ConnectWifi() {
   Serial.println("\nConnecting to Wifi network...");
   WiFi.begin(kWifiSsid, kWifiPassword);
   for (int i = 0; i < kWifiMaxRetries; i++) {
+    delay(kWifiRetryDelayMs);
     if (WiFi.status() == WL_CONNECTED) {
       Serial.println("WiFi connected...");
       return true;
     }
     LogRetryAttempt(i, kWifiMaxRetries, WiFi.status());
-    delay(kWifiRetryDelayMs);
   }
   Serial.println("\nError: Failed to connect to wifi.");
   return false;
