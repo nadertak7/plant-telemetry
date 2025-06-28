@@ -31,6 +31,8 @@ const int kWifiMaxRetries = 5;
 const int kTimeSyncMaxRetries = 5;
 
 // Time settings
+const int kSleepDurationSuccessSecs = 300;
+const int kSleepDurationErrorSecs = 10;
 const int kWifiRetryDelayMs = 10000;
 const int kMqttRetryDelayMs = 10000;
 const int kTimeSyncRetryDelayMs = 500;
@@ -38,8 +40,6 @@ const int kTimeSyncRetryDelayMs = 500;
 const char* kNtpServer = "pool.ntp.org";
 const char* kNtpTimezone = "UTC0";
 const long kMinValidTimeUnix = 1735689600L; // 1st January 2025
-const int kSleepDurationSuccessSecs = 60;
-const int kSleepDurationErrorSecs = 10;
 
 void LogRetryAttempt(int attempt_index, const int max_retry, int error_code = -999) {
   Serial.printf("Failed attempt %d of %d...\n", attempt_index + 1, max_retry);
@@ -100,9 +100,7 @@ String GetFormattedTimestamp() {
   return String(time_str);
 }
 
-String GetMoistureReading() {
-  // Take sensor reading
-  int adc_value_reading = analogRead(kMoistureSensorPin);
+String GetJsonPayload(int adc_value_reading) {
   int moisture_percentage = map(adc_value_reading, kAdcValueDry, kAdcValueWet, 0, 100);
   // In case moisture percentage falls outside of 0-100 range
   moisture_percentage = constrain(moisture_percentage, 0, 100);
@@ -124,8 +122,20 @@ void setup() {
   Serial.begin(115200);
   while (!Serial) {} // Wait for serial to initialise
 
+  // Take sensor reading
+  int adc_value_reading = analogRead(kMoistureSensorPin);
+
+  // If the sensor reading is significantly lower than the wet value,
+  // it is likely that the sensor is not connected. A message should
+  // not be sent to the MQTT broker
+  if (adc_value_reading < kAdcValueWet - 50) {
+    Serial.printf("\nInvalid sensor reading: %d\n", adc_value_reading);
+    Serial.println("Sensor not likely connected. Sleeping indefinitely...");
+    ESP.deepSleep(0); // Infinite
+  }
+  String payload = GetJsonPayload(adc_value_reading);
+
   if (ConnectWifi() && ConnectMqtt() && SyncTime()) {
-    String payload = GetMoistureReading();
     g_client.publish(kMqttTopic, payload.c_str(), true);
     Serial.println("Published message to MQTT broker...");
     is_task_successful = true;
