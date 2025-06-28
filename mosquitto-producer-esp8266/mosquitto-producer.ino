@@ -31,8 +31,8 @@ const int kWifiMaxRetries = 5;
 const int kTimeSyncMaxRetries = 5;
 
 // Time settings
-const int kWifiRetryDelayMs = 1000;
-const int kMqttRetryDelayMs = 500;
+const int kWifiRetryDelayMs = 10000;
+const int kMqttRetryDelayMs = 10000;
 const int kTimeSyncRetryDelayMs = 500;
 // NTP specific time settings
 const char* kNtpServer = "pool.ntp.org";
