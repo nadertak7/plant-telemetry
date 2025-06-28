@@ -41,19 +41,22 @@ const long kMinValidTimeUnix = 1735689600L; // 1st January 2025
 const int kSleepDurationSuccessSecs = 60;
 const int kSleepDurationErrorSecs = 10;
 
-void LogRetryAttempt(int attempt_index, const int max_retry) {
+void LogRetryAttempt(int attempt_index, const int max_retry, int error_code = -999) {
   Serial.printf("Failed attempt %d of %d...\n", attempt_index + 1, max_retry);
+  if (error_code != -999) {
+    Serial.printf("Error code %d\n", error_code);
+  }
 }
 
 bool ConnectWifi() {
-  Serial.print("\nConnecting to Wifi network...");
+  Serial.println("\nConnecting to Wifi network...");
   WiFi.begin(kWifiSsid, kWifiPassword);
   for (int i = 0; i < kWifiMaxRetries; i++) {
     if (WiFi.status() == WL_CONNECTED) {
-      Serial.println("\nWiFi connected...");
+      Serial.println("WiFi connected...");
       return true;
     }
-    LogRetryAttempt(i, kWifiMaxRetries);
+    LogRetryAttempt(i, kWifiMaxRetries, WiFi.status());
     delay(kWifiRetryDelayMs);
   }
   Serial.println("\nError: Failed to connect to wifi.");
@@ -61,32 +64,32 @@ bool ConnectWifi() {
 }
 
 bool ConnectMqtt() {
-  Serial.print("Connecting to MQTT...");
+  Serial.println("Connecting to MQTT...");
   g_client.setServer(kMqttBrokerAddress, 1883);
   for (int i = 0; i < kMqttMaxRetries; i++) {
     if (g_client.connect(kMqttClientId, kMqttUsername, kMqttPassword)) {
-      Serial.println("\nConnected to MQTT....");
+      Serial.println("Connected to MQTT....");
       return true;
     }
-    LogRetryAttempt(i, kMqttMaxRetries);
+    LogRetryAttempt(i, kMqttMaxRetries, g_client.state());
     delay(kMqttRetryDelayMs);
   }
-  Serial.println("\nError: Failed to connect to MQTT.");
+  Serial.println("Error: Failed to connect to MQTT.");
   return false;
 }
 
 bool SyncTime() {
-  Serial.print("Syncing time from NTP server...");
+  Serial.println("Syncing time from NTP server...");
   configTime(kNtpTimezone, kNtpServer);
   for (int i = 0; i < kTimeSyncMaxRetries; i++) {
     if (time(nullptr) > kMinValidTimeUnix) { // Later than 2025 (suggests successful sync)
-      Serial.println("\nTime synced...");
+      Serial.println("Time synced...");
       return true;
     }
     LogRetryAttempt(i, kTimeSyncMaxRetries);
     delay(kTimeSyncRetryDelayMs);
   }
-  Serial.println("\nError: Failed to sync time from NTP server.");
+  Serial.println("Error: Failed to sync time from NTP server.");
   return false;
 }
 
