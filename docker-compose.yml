@@ -2,6 +2,9 @@ services:
   mosquitto-broker:
     container_name: mosquitto-broker
     build: ./mosquitto-broker
+    environment:
+      - MQTT_USERNAME=${MQTT_USERNAME}
+      - MQTT_PASSWORD=${MQTT_PASSWORD}
     ports:
       - "1883:1883"
     volumes:
