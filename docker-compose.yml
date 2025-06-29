@@ -3,8 +3,8 @@ services:
     container_name: mosquitto-broker
     build: ./mosquitto-broker
     environment:
-      - MQTT_USERNAME=${MQTT_USERNAME}
-      - MQTT_PASSWORD=${MQTT_PASSWORD}
+      MQTT_USERNAME: ${MQTT_USERNAME}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
     ports:
       - "1883:1883"
     volumes:
@@ -18,8 +18,8 @@ services:
     build: ./postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_SUPER_USERNAME}
-      POSTGRES_PASSWORD: ${POSTGRES_SUPER_PASSWORD}
+      POSTGRES_SUPER_USER: ${POSTGRES_SUPER_USERNAME}
+      POSTGRES_SUPER_PASSWORD: ${POSTGRES_SUPER_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
