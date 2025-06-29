@@ -3,7 +3,8 @@ COPY --from=ghcr.io/astral-sh/uv:0.7.16 /uv /uvx /bin/
 
 WORKDIR /app
 
-ENV PYTHONPATH="/app:${PYTHONPATH}" \
+ENV PYTHONPATH="/app:/app/src:${PYTHONPATH}" \
+    PATH="/usr/local/bin:${PATH}" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
@@ -12,12 +13,9 @@ RUN rm -rf /root/.cache/uv
 
 COPY pyproject.toml* .
 RUN if [ -f pyproject.toml ]; then \
-      uv pip install --system --no-cache -e .; \
+      uv pip install --system --no-cache .; \
     else \
       echo "No pyproject.toml file found. Skipping installation..."; \
     fi
 
 COPY . .
-
-RUN useradd -m appuser
-USER appuser

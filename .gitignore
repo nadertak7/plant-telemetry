@@ -1,4 +1,9 @@
+.env
+*.egg-info
+
 mosquitto-broker/config/pwfile
 mosquitto-broker/data
 mosquitto-broker/log
-.env
+
+mosquitto-consumer/mosquitto_consumer.egg-info
+mosquitto-consumer/build/
