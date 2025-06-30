@@ -3,7 +3,7 @@ COPY --from=ghcr.io/astral-sh/uv:0.7.16 /uv /uvx /bin/
 
 WORKDIR /app
 
-ENV PYTHONPATH="/app:/app/src:${PYTHONPATH}" \
+ENV PYTHONPATH="/app:${PYTHONPATH}" \
     PATH="/usr/local/bin:${PATH}" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
@@ -18,4 +18,4 @@ RUN if [ -f pyproject.toml ]; then \
       echo "No pyproject.toml file found. Skipping installation..."; \
     fi
 
-COPY . .
+COPY src/ .
