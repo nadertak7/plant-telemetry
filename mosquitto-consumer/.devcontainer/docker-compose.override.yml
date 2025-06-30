@@ -3,3 +3,7 @@
 services:
   mosquitto-consumer:
     command: sleep infinity
+    volumes:
+      - .:/workspace:cached
+    environment:
+      PYTHONPATH: /workspace/src
