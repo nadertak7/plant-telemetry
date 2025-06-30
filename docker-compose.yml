@@ -35,7 +35,7 @@ services:
       POSTGRES_SUPER_USER: ${POSTGRES_SUPER_USERNAME}
       POSTGRES_SUPER_PASSWORD: ${POSTGRES_SUPER_PASSWORD}
     volumes:
-      - ./mosquitto-consumer:/app
+      - ./logs:/app/logs
     depends_on:
       - postgres
       - mosquitto-broker
