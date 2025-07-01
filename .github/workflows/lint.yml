@@ -1,0 +1,41 @@
+ame: Ruff Linting
+
+on:
+  push:
+    branches: ["**"]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+    # Set up parallel jobs (as we add more directories in the future)
+      matrix:
+        directory: ['./mosquitto-consumer/src']
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.12"
+        cache: 'pip'
+
+    - name: Install uv
+      run: |
+        python -m pip install --upgrade pip
+        pip install uv
+
+    - name: Install dependencies
+      run: |
+        if [ -f pyproject.toml ]; then
+          uv pip install --system -e ".[dev]"
+        fi
+
+    - name: Lint
+      working-directory: ./${{matrix.directory}}
+      run: |
+        ruff check .
