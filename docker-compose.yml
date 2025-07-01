@@ -29,17 +29,20 @@ services:
   mosquitto-consumer:
     build: ./mosquitto-consumer
     environment:
+      HOST_IP: host.docker.internal # See extra_hosts section
       MQTT_USERNAME: ${MQTT_USERNAME}
       MQTT_PASSWORD: ${MQTT_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_SUPER_USER: ${POSTGRES_SUPER_USERNAME}
       POSTGRES_SUPER_PASSWORD: ${POSTGRES_SUPER_PASSWORD}
     volumes:
-      - ./logs:/app/logs
+      - ./mosquitto-consumer/logs:/app/logs
     depends_on:
       - postgres
       - mosquitto-broker
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # IPv4 address
 
 volumes:
   postgres-data:

@@ -6,4 +6,4 @@ services:
     volumes:
       - .:/workspace:cached
     environment:
-      PYTHONPATH: /workspace/src
+      PYTHONPATH: /workspace/mosquitto-consumer/src
