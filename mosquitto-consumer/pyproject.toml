@@ -27,6 +27,10 @@ lint.select = [
     "D",
     "ANN"
 ]
+lint.ignore = [
+    "D100",
+    "D104"
+]
 
 [tool.pyrefly]
 python_version="3.12"
