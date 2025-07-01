@@ -37,10 +37,10 @@ services:
       POSTGRES_SUPER_PASSWORD: ${POSTGRES_SUPER_PASSWORD}
     volumes:
       - ./mosquitto-consumer/logs:/app/logs
-    depends_on:
-      - postgres
-      - mosquitto-broker
-    restart: unless-stopped
+    # depends_on:
+      # - postgres
+      # - mosquitto-broker
+    # restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway" # IPv4 address
 

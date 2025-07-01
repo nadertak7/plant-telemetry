@@ -19,3 +19,5 @@ RUN if [ -f pyproject.toml ]; then \
     fi
 
 COPY src/ .
+
+CMD ["uv", "run", "mosquitto_consumer/mqtt_consumer_client.py"]
