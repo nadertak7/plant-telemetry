@@ -18,6 +18,6 @@ RUN if [ -f pyproject.toml ]; then \
       echo "No pyproject.toml file found. Skipping installation..."; \
     fi
 
-COPY src/ .
+COPY ./src/ ./app/src
 
 CMD ["uv", "run", "mosquitto_consumer/mqtt_consumer_client.py"]
