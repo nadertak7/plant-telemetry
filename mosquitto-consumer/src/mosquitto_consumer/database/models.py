@@ -17,12 +17,12 @@ class Plant(Base):
     plant_name: Mapped[str] =  mapped_column(String, unique=True, nullable=False)
 
     # Add constraints for conflict statement
-    __table_args__: UniqueConstraint = (
+    __table_args__: Tuple[UniqueConstraint] = (
         UniqueConstraint(
             "id",
             "plant_name",
             name="unique_id_plant_name"
-        )
+        ),
     )
 
 

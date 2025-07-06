@@ -4,7 +4,6 @@ from contextlib import contextmanager
 from typing import Dict, Generator, Optional, Sequence
 
 from sqlalchemy import Engine, Row, create_engine, exc, text
-from sqlalchemy.dialects import registry
 from sqlalchemy.engine import Result
 from sqlalchemy.exc import ResourceClosedError
 from sqlalchemy.orm import Session, sessionmaker
@@ -40,18 +39,8 @@ class SqlClient:
                 or if there is an unexpected issue.
 
         """
-        # Validate dialect and driver args
-        dialect_driver: str = f"{dialect}+{driver}"
-        try:
-            registry.load(dialect_driver)
-        except exc.NoSuchModuleError as exception:
-            logger.exception(
-                f"Unsupported dialect and driver combination {dialect_driver} " \
-                "Ensure that dialect is correct and driver is installed in environment.")
-            raise DialectDriverError() from exception
-
         self.connection_url = (
-            f"{dialect_driver}://" \
+            f"{dialect}+{driver}://" \
             f"{settings.POSTGRES_SUPER_USER}" \
             f":{settings.POSTGRES_SUPER_PASSWORD.get_secret_value()}" \
             f"@{settings.HOST_IP}:5432" \
@@ -62,6 +51,14 @@ class SqlClient:
             self.engine: Engine = create_engine(self.connection_url)
             # Factory to configure future sessions
             self._session = sessionmaker(bind=self.engine)
+        except exc.NoSuchModuleError as exception:
+            logger.exception(
+                "Unsupported dialect and driver combination %s+%s. " \
+                "Ensure that dialect is correct and driver is installed in environment.",
+                dialect,
+                driver
+                )
+            raise DialectDriverError() from exception
         except exc.OperationalError as exception:
             logger.exception(
                 "Error while connecting to psql database %s, ensure credentials are correct.",
