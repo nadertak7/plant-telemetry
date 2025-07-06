@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     # MQTT settings
     MQTT_USERNAME: str
     MQTT_PASSWORD: SecretStr
+    MQTT_PORT: int = 1883
 
 # pyrefly: ignore[missing-argument]
 settings: Settings = Settings()
