@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum, StrEnum, auto
+from typing import Dict, List
 
 
 @dataclass(frozen=True)
@@ -27,6 +28,20 @@ class MosquittoTopics(Enum):
         """Property for topic. Use like `MosquittoTopics.SCARLET_STAR.topic`."""
         return self.value.topic
 
+    @classmethod
+    def topic_to_id_dict(cls) -> Dict[str, int]:
+        return {member.value.topic: member.value.id for member in cls} # pyrefly: ignore[bad-argument-type]
+
+    @classmethod
+    def id_to_topic_insert_values(cls) -> List[Dict[str, str]]:
+        return [
+            {
+                "id": member.value.id,
+                "plant_name": member.name.lower()
+            }
+            for member in cls # pyrefly: ignore[bad-argument-type]
+        ]
+
 class TableNames(StrEnum):
     """String enums for Postgres table names."""
 
@@ -34,3 +49,11 @@ class TableNames(StrEnum):
 
     PLANTS = auto()
     PLANTS_MOISTURE_LOG = auto()
+
+class MosquittoSubscribeMethod(Enum):
+    """String enums to determine MQTT subscription method."""
+
+    AT_MOST_ONCE = 0
+    AT_LEAST_ONCE = 1
+    EXACTLY_ONCE = 2
+
