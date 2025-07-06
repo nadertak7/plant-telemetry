@@ -145,4 +145,3 @@ class SqlClient:
                 raise SqlQueryError(query) from exception
 
 sql_client: SqlClient = SqlClient()
-

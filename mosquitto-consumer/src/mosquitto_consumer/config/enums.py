@@ -30,10 +30,12 @@ class MosquittoTopics(Enum):
 
     @classmethod
     def topic_to_id_dict(cls) -> Dict[str, int]:
+        """Return a dictionary mapping of topics to ids to allow reverse lookups."""
         return {member.value.topic: member.value.id for member in cls} # pyrefly: ignore[bad-argument-type]
 
     @classmethod
     def id_to_topic_insert_values(cls) -> List[Dict[str, str]]:
+        """Return all the mosquitto topic ids and values in a form that can be inserted into postgres."""
         return [
             {
                 "id": member.value.id,
