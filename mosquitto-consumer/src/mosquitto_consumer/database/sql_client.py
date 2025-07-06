@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import traceback
-from types import TracebackType
-from typing import Dict, Optional, Sequence, Type
+from contextlib import contextmanager
+from typing import Dict, Generator, Optional, Sequence
 
 from sqlalchemy import Engine, Row, create_engine, exc, text
 from sqlalchemy.dialects import registry
@@ -13,7 +12,12 @@ from sqlalchemy.orm import Session, sessionmaker
 from mosquitto_consumer.config.logs import logger
 from mosquitto_consumer.config.settings import settings
 from mosquitto_consumer.database.models import Base
-from mosquitto_consumer.utils.exceptions import DatabaseConnectionError, DialectDriverError, SqlQueryError
+from mosquitto_consumer.utils.exceptions import (
+    DatabaseConnectionError,
+    DialectDriverError,
+    SchemaCreationError,
+    SqlQueryError,
+)
 
 
 class SqlClient:
@@ -24,7 +28,7 @@ class SqlClient:
         dialect: str = 'postgresql',
         driver: str = 'psycopg2'
         ) -> None:
-        """Instantiate SqlClient class. Attempt a database connection in the constructor.
+        """Instantiate SqlQueryClient class. Attempt a database connection in the constructor.
 
         Args:
             dialect (str, optional): The chosen SQL dialect for queries. Defaults to 'postgresql'.
@@ -32,8 +36,8 @@ class SqlClient:
 
         Raises:
             DialectDriverError: Raise if chosen dialect and/or driver are incompatible.
-            DatabaseConnectionError: Raise if there is an operational issue while connecting to a database.
-            RuntimeError: Raise if there is an unexpected issue while connecting to a database.
+            DatabaseConnectionError: Raise if there is an operational issue while connecting to a database
+                or if there is an unexpected issue.
 
         """
         # Validate dialect and driver args
@@ -56,7 +60,8 @@ class SqlClient:
 
         try:
             self.engine: Engine = create_engine(self.connection_url)
-            self.session = sessionmaker(bind=self.engine)
+            # Factory to configure future sessions
+            self._session = sessionmaker(bind=self.engine)
         except exc.OperationalError as exception:
             logger.exception(
                 "Error while connecting to psql database %s, ensure credentials are correct.",
@@ -68,40 +73,43 @@ class SqlClient:
                 "Unexpected error while connecting to psql database %s.",
                 settings.HOST_IP
             )
-            raise RuntimeError() from exception
+            raise DatabaseConnectionError() from exception
 
-    def __enter__(self) -> SqlClient:
-        """Enter context manager. Use `with SqlClient():`."""
-        return self
+    @contextmanager
+    def get_session(self) -> Generator[Session]:
+        """Provide transactional database session via context manager.
 
-    def __exit__(
-            self,
-            exc_type: Optional[Type[BaseException]],
-            exc_value: Optional[BaseException],
-            exc_traceback: Optional[TracebackType]
-        ) -> Optional[bool]:
-        """Exit the context manager and dispose of the engine."""
-        logger.info("Disposing of database engine connection pool...")
-        self.engine.dispose()
-        if exc_type:
-            print("An error occurred:")
-            traceback.print_exception(exc_type, exc_value, exc_traceback)
-        return False
+        At the end of the `with` block, automatically handles any commits
+            and rollbacks (if a failure is encountered).
+
+        Yields:
+            Generator[Session]: SQLAlchemy session object.
+
+        Usage:
+            with sql_client.get_session() as session, session.begin():
+                    # Perform database operations
+
+        """
+        session: Session = self._session()
+        try:
+            yield session
+        finally:
+            session.close()
 
     def create_schema(self) -> None:
         """Create schema from models.py if it does not exist.
 
         Raises:
-            RuntimeError: Raise if an error occurs when creating the schema in models.py
+            SchemaCreationError: Raise if an error occurs when creating the schema from models.py
 
         """
         logger.info("Creating schema if it does not exist...")
         try:
             Base.metadata.create_all(bind=self.engine)
-            logger.info("Schema created...")
+            logger.info("Schema created or retained successfully...")
         except exc.SQLAlchemyError as exception:
             logger.exception("Error while creating schema.")
-            raise RuntimeError() from exception
+            raise SchemaCreationError() from exception
 
     def execute_sql(
         self, query: str,
@@ -121,19 +129,20 @@ class SqlClient:
             Optional[Sequence[Row]]: Data returned by query (if any).
 
         """
-        session: Session = self.session()
-        try:
-            # Add connection to pool. Commits if code within executes successfully,
-            # and rolls back if not.
-            with session.begin():
-                result: Result = session.execute(text(query), params or {})
-                try:
-                    return result.all()
-                except ResourceClosedError:
-                    # Raised when .all() is called on an empty result (for inserts, updates, deletes etx.)
-                    return None
-        except exc.SQLAlchemyError as exception:
-            logger.exception("Error executing query. Transaction rolled back.")
-            raise SqlQueryError(query) from exception
-        finally:
-            session.close() # Return connection to pool
+        with self.get_session() as session:
+            try:
+                # Add connection to pool. Commits if code within executes successfully,
+                # and rolls back if not.
+                with session.begin():
+                    result: Result = session.execute(text(query), params or {})
+                    try:
+                        return result.all()
+                    except ResourceClosedError:
+                        # Raised when .all() is called on an empty result (for inserts, updates, deletes etx.)
+                        return None
+            except exc.SQLAlchemyError as exception:
+                logger.exception("Error executing query. Transaction rolled back.")
+                raise SqlQueryError(query) from exception
+
+sql_client: SqlClient = SqlClient()
+
