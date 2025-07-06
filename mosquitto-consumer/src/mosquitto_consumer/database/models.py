@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Literal, Tuple
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column
 
 from mosquitto_consumer.config.enums import TableNames
@@ -15,6 +15,15 @@ class Plant(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     plant_name: Mapped[str] =  mapped_column(String, unique=True, nullable=False)
+
+    # Add constraints for conflict statement
+    __table_args__: UniqueConstraint = (
+        UniqueConstraint(
+            "id",
+            "plant_name",
+            name="unique_id_plant_name"
+        )
+    )
 
 
 class PlantMoistureLog(Base):
