@@ -8,15 +8,15 @@ from sqlalchemy.engine import Result
 from sqlalchemy.exc import ResourceClosedError
 from sqlalchemy.orm import Session, sessionmaker
 
-from mosquitto_consumer.config.logs import logger
-from mosquitto_consumer.config.settings import settings
-from mosquitto_consumer.database.models import Base
-from mosquitto_consumer.utils.exceptions import (
+from mosquitto_consumer.config.exceptions import (
     DatabaseConnectionError,
     DialectDriverError,
     SchemaCreationError,
     SqlQueryError,
 )
+from mosquitto_consumer.config.logs import logger
+from mosquitto_consumer.config.settings import settings
+from mosquitto_consumer.database.models import Base
 
 
 class SqlClient:

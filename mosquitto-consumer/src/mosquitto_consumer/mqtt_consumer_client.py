@@ -8,11 +8,11 @@ from sqlalchemy.dialects.postgresql import Insert, insert
 from sqlalchemy.exc import SQLAlchemyError
 
 from mosquitto_consumer.config.enums import MosquittoSubscribeMethod, MosquittoTopics
+from mosquitto_consumer.config.exceptions import MqttBrokerConnectionError, SqlClientError
 from mosquitto_consumer.config.logs import logger
 from mosquitto_consumer.config.settings import settings
 from mosquitto_consumer.database.models import Plant, PlantMoistureLog
 from mosquitto_consumer.database.sql_client import sql_client
-from mosquitto_consumer.utils.exceptions import MqttBrokerConnectionError, SqlClientError
 
 # pyrefly: ignore[bad-argument-type]
 TOPIC_TO_ID: Dict[str, int] = MosquittoTopics.topic_to_id_dict()
