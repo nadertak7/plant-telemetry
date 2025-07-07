@@ -29,7 +29,8 @@ services:
   mosquitto-consumer:
     build: ./mosquitto-consumer
     environment:
-      HOST_IP: host.docker.internal
+      POSTGRES_DB_HOST: postgres
+      MQTT_BROKER_HOST: mosquitto-broker
       MQTT_USERNAME: ${MQTT_USERNAME}
       MQTT_PASSWORD: ${MQTT_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}

@@ -43,7 +43,7 @@ class SqlClient:
             f"{dialect}+{driver}://" \
             f"{settings.POSTGRES_SUPER_USER}" \
             f":{settings.POSTGRES_SUPER_PASSWORD.get_secret_value()}" \
-            f"@{settings.HOST_IP}:5432" \
+            f"@{settings.POSTGRES_DB_HOST}:5432" \
             f"/{settings.POSTGRES_DB}"
         )
 
@@ -62,13 +62,13 @@ class SqlClient:
         except exc.OperationalError as exception:
             logger.exception(
                 "Error while connecting to psql database %s, ensure credentials are correct.",
-                settings.HOST_IP
+                settings.POSTGRES_DB_HOST
             )
             raise DatabaseConnectionError() from exception
         except exc.SQLAlchemyError as exception:
             logger.exception(
                 "Unexpected error while connecting to psql database %s.",
-                settings.HOST_IP
+                settings.POSTGRES_DB_HOST
             )
             raise DatabaseConnectionError() from exception
 

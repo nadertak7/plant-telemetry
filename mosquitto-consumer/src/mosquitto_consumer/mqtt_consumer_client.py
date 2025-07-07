@@ -61,7 +61,7 @@ def on_connect(  # noqa: D417
 
     """
     if reason_code == 0:
-        logger.info(f"Successfully connected to MQTT Broker with reason code {reason_code}")
+        logger.info(f"Successfully connected to MQTT Broker with reason code: {reason_code}")
         if SUBSCRIBED_TOPICS:
             client.subscribe(SUBSCRIBED_TOPICS)
         else:
@@ -129,6 +129,7 @@ def on_message(  # noqa: D417
 
 def main() -> None:
     """Core logic of mosquitto consumer."""
+    sql_client.create_schema()
     add_plants()
 
     mqtt_client: Client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
@@ -136,9 +137,13 @@ def main() -> None:
     mqtt_client.on_message = on_message
 
     try:
-        mqtt_client.connect(settings.HOST_IP, port=settings.MQTT_PORT, keepalive=60)
-    except (ConnectionRefusedError, OSError) as exception:
-        logger.exception(f"Error connecting to {settings.HOST_IP} on port {settings.MQTT_PORT}.")
+        mqtt_client.username_pw_set(
+            username=settings.MQTT_USERNAME,
+            password=settings.MQTT_PASSWORD.get_secret_value()
+        )
+        mqtt_client.connect(settings.MQTT_BROKER_HOST, port=settings.MQTT_PORT, keepalive=60)
+    except (ConnectionRefusedError, OSError, TypeError) as exception:
+        logger.exception(f"Error connecting to {settings.MQTT_BROKER_HOST} on port {settings.MQTT_PORT}.")
         raise MqttBrokerConnectionError() from exception
 
     mqtt_client.loop_forever()
