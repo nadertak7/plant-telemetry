@@ -46,7 +46,7 @@ class PlantMoistureLog(Base):
             name="check_moisture_perc_range"
         ),
         CheckConstraint(
-            "adc_value BETWEEN dry_value AND wet_value",
+            "adc_value BETWEEN wet_value AND dry_value",
             name="check_adc_value_range"
         )
     )

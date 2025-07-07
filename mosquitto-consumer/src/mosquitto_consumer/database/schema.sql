@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS plants_moisture_log (
     moisture_perc INT NOT NULL
 
     CONSTRAINT check_moisture_perc_range CHECK (moisture_perc BETWEEN 0 AND 100),
-    CONSTRAINT check_adc_value_range CHECK (adc_value BETWEEN dry_value AND wet_value)
+    CONSTRAINT check_adc_value_range CHECK (adc_value BETWEEN wet_value AND dry_value)
 );
 
 CREATE INDEX IF NOT EXISTS idx_plants_moisture_logs_plant_id
