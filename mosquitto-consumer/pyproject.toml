@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Receives data from mosquitto and puts into postgres"
 requires-python = ">=3.12"
 dependencies = [
+    "click>=8.2.1",
     "paho-mqtt>=2.1.0",
     "psycopg2-binary>=2.9.10",
     "pydantic-settings>=2.10.1",
@@ -16,6 +17,9 @@ dev = [
     "pytest>=8.3.5",
     "ruff>=0.9.9",
 ]
+
+[project.scripts]
+mosquitto-consumer = "mosquitto_consumer.cli:cli"
 
 [tool.ruff]
 lint.select = [
