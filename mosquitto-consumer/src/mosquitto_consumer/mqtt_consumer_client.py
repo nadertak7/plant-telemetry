@@ -14,6 +14,8 @@ from mosquitto_consumer.database.models import PlantMoistureLog
 from mosquitto_consumer.database.sql_client import sql_client
 from mosquitto_consumer.utils.add_plants import add_plants
 
+MQTT_CLIENT_NAME = 'plant-telemetry-moisture'
+
 # pyrefly: ignore[bad-argument-type]
 TOPIC_TO_ID: Dict[str, int] = MosquittoTopics.topic_to_id_dict()
 SUBSCRIBED_TOPICS: List[Tuple[str, int]] = [
@@ -106,7 +108,11 @@ def main() -> None:
     sql_client.create_schema()
     add_plants()
 
-    mqtt_client: Client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+    mqtt_client: Client = mqtt.Client(
+        callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
+        client_id = MQTT_CLIENT_NAME,
+        clean_session=False # Allow messages to be retained if the broker is up but the client is down
+    )
     mqtt_client.on_connect = on_connect # pyrefly: ignore[bad-argument-type]
     mqtt_client.on_message = on_message
 
