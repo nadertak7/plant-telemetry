@@ -14,7 +14,7 @@
 	"runServices": ["mosquitto-consumer-dev"],
 
 	// Installs dev dependencies that are not installed in the Dockerfile
-	"postCreateCommand": "uv sync --dev",
+	"postCreateCommand": "uv pip install --system --no-cache '.[dev]'",
 
 	"customizations": {
 		"vscode": {
