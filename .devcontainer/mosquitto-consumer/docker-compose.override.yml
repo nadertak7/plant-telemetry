@@ -1,0 +1,19 @@
+# Overrides default command (if any) so that
+# dev container does not instantly restart
+services:
+  mosquitto-consumer-dev:
+    build:
+      context: ./mosquitto-consumer
+      dockerfile: Dockerfile
+    command: sleep infinity
+    volumes:
+      - ./mosquitto-consumer:/workspaces:cached
+    environment:
+      PYTHONPATH: /workspace/mosquitto-consumer/src
+    networks:
+      - devcontainer-network
+
+networks:
+  devcontainer-network:
+    name: devcontainer-netwrk
+    driver: bridge
