@@ -2,14 +2,12 @@
 # dev container does not instantly restart
 services:
   mosquitto-consumer-dev:
-    build:
-      context: ./mosquitto-consumer
-      dockerfile: Dockerfile
-    command: sleep infinity
+    build: ./mosquitto-consumer
     volumes:
       - ./mosquitto-consumer:/workspaces:cached
     environment:
       PYTHONPATH: /workspace/mosquitto-consumer/src
+    command: sleep infinity
     networks:
       - devcontainer-network
 
