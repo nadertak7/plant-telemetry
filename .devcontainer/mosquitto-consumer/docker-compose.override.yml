@@ -2,7 +2,6 @@
 # dev container does not instantly restart
 services:
   mosquitto-consumer:
-    build: ./mosquitto-consumer
     volumes:
       - ./mosquitto-consumer:/app:cached
     command: sleep infinity
