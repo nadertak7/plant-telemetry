@@ -7,11 +7,9 @@
 		"../../docker-compose.yml",
 		"./docker-compose.override.yml" // Allows dev container to sleep indefinitely
 	],
-	"service": "mosquitto-consumer-dev",
+	"service": "mosquitto-consumer",
 
-	"workspaceFolder": "/workspaces",
-
-	"runServices": ["mosquitto-consumer-dev"],
+	"workspaceFolder": "/app",
 
 	// Installs dev dependencies that are not installed in the Dockerfile
 	"postCreateCommand": "uv pip install --system --no-cache '.[dev]'",
