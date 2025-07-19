@@ -14,7 +14,7 @@ def cli() -> None:
 @cli.command
 def updateplants() -> None:
     """Update the plants table if new items have been added while the script is running."""
-    add_plants
+    add_plants()
 
 if __name__ == "__main__":
     cli()

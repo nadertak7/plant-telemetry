@@ -19,7 +19,7 @@ dev = [
 ]
 
 [project.scripts]
-mosquitto-consumer = "mosquitto_consumer.cli:cli"
+mosquitto-cli = "mosquitto_consumer.cli:cli"
 
 [tool.ruff]
 lint.select = [
