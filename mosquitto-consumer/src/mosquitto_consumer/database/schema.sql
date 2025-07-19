@@ -43,7 +43,7 @@ BEGIN
         format(
             "ALTER TABLE %I ADD CONSTRAINT %I FOREIGN KEY (%I) REFERENCES %I(%I)",
             p_table_name,
-            p_constrant_name,
+            p_constraint_name,
             p_column_name,
             p_referenced_table,
             p_referenced_column
@@ -55,7 +55,7 @@ $$ LANGUAGE plpgsql;
 SELECT 
     add_foreign_key_if_not_exists(
         p_table_name=>'plants_moisture_log',
-        p_constrant_name=>'fk_plants_moisture_log_plant_id',
+        p_constraint_name=>'fk_plants_moisture_log_plant_id',
         p_column_name=>'plant_id',
         p_referenced_table=>'plants',
         p_referenced_column=>'id'
