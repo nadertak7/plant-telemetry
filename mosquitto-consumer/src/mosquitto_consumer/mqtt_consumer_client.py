@@ -4,8 +4,7 @@ from typing import Any, Dict, List, Sequence
 
 import paho.mqtt.client as mqtt
 from paho.mqtt.client import Client, ConnectFlags, MQTTMessage, Properties, ReasonCode
-from sqlalchemy import RowMapping
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import RowMapping, exc
 
 from mosquitto_consumer.config.enums import MosquittoSubscribeMethod
 from mosquitto_consumer.config.exceptions import MqttBrokerConnectionError, SqlClientError
@@ -84,7 +83,7 @@ def on_message(  # noqa: D417
             wet_value=int(data["wet_value"]),
             moisture_perc=int(data["moisture_perc"])
         )
-    except (ValueError, TypeError) as _:
+    except (ValueError, TypeError):
         logger.exception("Error processing data to model. Message may be in incorrect format.")
         return
 
@@ -95,7 +94,7 @@ def on_message(  # noqa: D417
     except SqlClientError:
         logger.exception("Error while adding record to database.")
         return
-    except SQLAlchemyError:
+    except exc.SQLAlchemyError:
         logger.exception("Unexpected error while adding record to database.")
         return
 
