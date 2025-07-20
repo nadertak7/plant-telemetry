@@ -14,7 +14,7 @@ services:
     restart: unless-stopped
 
   postgres:
-    container_name: postgres_db
+    container_name: postgres
     build: ./postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -27,6 +27,7 @@ services:
     restart: unless-stopped
 
   mosquitto-consumer:
+    container_name: mosquitto-consumer
     build: ./mosquitto-consumer
     environment:
       POSTGRES_DB_HOST: postgres

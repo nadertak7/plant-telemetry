@@ -11,6 +11,9 @@
 
 	"workspaceFolder": "/app",
 
+	// Checks if service is already running on host machine before starting devcontainer
+	"initializeCommand": "bash ./.devcontainer/scripts/check-running-service.sh mosquitto-consumer",
+
 	// Installs dev dependencies that are not installed in the Dockerfile
 	"postCreateCommand": "uv pip install --system --no-cache '.[dev]'",
 
