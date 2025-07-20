@@ -1,27 +1,23 @@
 import json
 from datetime import datetime
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Sequence
 
 import paho.mqtt.client as mqtt
 from paho.mqtt.client import Client, ConnectFlags, MQTTMessage, Properties, ReasonCode
+from sqlalchemy import RowMapping
 from sqlalchemy.exc import SQLAlchemyError
 
-from mosquitto_consumer.config.enums import MosquittoSubscribeMethod, MosquittoTopics
+from mosquitto_consumer.config.enums import MosquittoSubscribeMethod
 from mosquitto_consumer.config.exceptions import MqttBrokerConnectionError, SqlClientError
 from mosquitto_consumer.config.logs import logger
 from mosquitto_consumer.config.settings import settings
 from mosquitto_consumer.database.models import PlantMoistureLog
 from mosquitto_consumer.database.sql_client import sql_client
-from mosquitto_consumer.utils.add_plants import add_plants
+from mosquitto_consumer.utils.plants_utils import retrieve_plant_topics
 
 MQTT_CLIENT_NAME = 'plant-telemetry-moisture'
-
-# pyrefly: ignore[bad-argument-type]
-TOPIC_TO_ID: Dict[str, int] = MosquittoTopics.topic_to_id_dict()
-SUBSCRIBED_TOPICS: List[Tuple[str, int]] = [
-    (topic, MosquittoSubscribeMethod.EXACTLY_ONCE.value)
-    for topic in TOPIC_TO_ID.keys()
-]
+PLANT_TOPICS: Sequence[RowMapping] | List = retrieve_plant_topics() or []
+TOPIC_TO_ID_MAPPING: Dict[str, int] = {plant["topic"]: plant["id"] for plant in PLANT_TOPICS}
 
 def on_connect(  # noqa: D417
     client: mqtt.Client,
@@ -37,14 +33,12 @@ def on_connect(  # noqa: D417
 
     """
     if reason_code == 0:
-        logger.info(f"Successfully connected to MQTT Broker with reason code: {reason_code}")
-        if SUBSCRIBED_TOPICS:
-            client.subscribe(SUBSCRIBED_TOPICS)
-        else:
-            logger.warning("No topics to subscribe to, check MosquittoTopics enum.")
+        logger.info("Successfully connected to MQTT Broker...")
+        client.subscribe("plant-monitoring/#", MosquittoSubscribeMethod.EXACTLY_ONCE.value)
+        logger.info("Subscribed to topics suffixed with 'plant-monitoring/'")
+        logger.info("Add plants and topics with command: mosquitto-cli addplant")
     else:
         logger.error("Failed to connect to MQTT broker with error code %s", reason_code)
-
 
 def on_message(  # noqa: D417
     client: Client,
@@ -61,10 +55,12 @@ def on_message(  # noqa: D417
     payload: str = msg.payload.decode("utf-8")
     logger.info(f"Received message from topic '{topic}': {payload}")
 
-    plant_id: int | None = TOPIC_TO_ID.get(topic)
-    if not plant_id:
+    if topic not in TOPIC_TO_ID_MAPPING:
         logger.warning(f"Received message on an un-mapped topic: {topic}. Ignoring.")
+        logger.warning("If a plant was added while this script is running, restart the container.")
         return
+
+    plant_id: int = TOPIC_TO_ID_MAPPING[topic]
 
     try:
         # Check if keys from decoded message are valid
@@ -73,7 +69,7 @@ def on_message(  # noqa: D417
         if not all(key in data for key in required_keys):
             logger.error(f"Data does not contain all required keys: {required_keys}")
             return
-    except json.JSONDecodeError as _:
+    except json.JSONDecodeError:
         logger.exception(f"Error decoding JSON from topic {topic}. Payload: {payload}")
         return
 
@@ -106,7 +102,6 @@ def on_message(  # noqa: D417
 def main() -> None:
     """Core logic of mosquitto consumer."""
     sql_client.create_schema()
-    add_plants()
 
     mqtt_client: Client = mqtt.Client(
         callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
