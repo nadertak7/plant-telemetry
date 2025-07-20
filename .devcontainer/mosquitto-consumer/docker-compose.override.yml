@@ -1,0 +1,7 @@
+# Overrides default command (if any) so that
+# dev container does not instantly restart
+services:
+  mosquitto-consumer:
+    volumes:
+      - ./mosquitto-consumer:/app:cached
+    command: sleep infinity

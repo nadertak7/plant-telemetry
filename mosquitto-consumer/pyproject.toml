@@ -1,0 +1,42 @@
+[project]
+name = "mosquitto-consumer"
+version = "0.1.0"
+description = "Receives data from mosquitto and puts into postgres"
+requires-python = ">=3.12"
+dependencies = [
+    "click>=8.2.1",
+    "paho-mqtt>=2.1.0",
+    "psycopg2-binary>=2.9.10",
+    "pydantic-settings>=2.10.1",
+    "sqlalchemy>=2.0.41",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pyrefly>=0.16.2",
+    "pytest>=8.3.5",
+    "ruff>=0.9.9",
+]
+
+[project.scripts]
+mosquitto-cli = "mosquitto_consumer.cli:cli"
+
+[tool.ruff]
+lint.select = [
+    "E",
+    "F",
+    "W",
+    "N",
+    "I",
+    "TRY",
+    "D",
+    "ANN"
+]
+lint.ignore = [
+    "D100",
+    "D104"
+]
+line-length = 120
+
+[tool.pyrefly]
+python_version="3.12"
