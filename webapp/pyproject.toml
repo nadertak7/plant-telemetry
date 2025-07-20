@@ -1,0 +1,37 @@
+[project]
+name = "webapp"
+version = "0.1.0"
+description = "Plant monitoring webapp using steamlit"
+requires-python = ">=3.12"
+dependencies = [
+    "psycopg2-binary>=2.9.10",
+    "pydantic-settings>=2.10.1",
+    "sqlalchemy>=2.0.41",
+    "streamlit>=1.47.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pyrefly>=0.24.2",
+    "ruff>=0.12.4",
+]
+
+[tool.ruff]
+lint.select = [
+    "E",
+    "F",
+    "W",
+    "N",
+    "I",
+    "TRY",
+    "D",
+    "ANN"
+]
+lint.ignore = [
+    "D100",
+    "D104"
+]
+line-length = 120
+
+[tool.pyrefly]
+python_version="3.12"

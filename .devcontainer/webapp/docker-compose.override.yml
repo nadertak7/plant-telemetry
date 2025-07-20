@@ -1,0 +1,5 @@
+services:
+  webapp:
+    volumes:
+      - ./webapp:/app:cached
+    command: sleep infinity
