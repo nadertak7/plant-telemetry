@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS plants (
     plant_name TEXT NOT NULL UNIQUE,
     topic TEXT NOT NULL UNIQUE
 
-    CONSTRIANT check_topic CHECK (topic LIKE 'plant-monitoring/%/%/telemetry')
+    CONSTRIANT check_topic_format CHECK (topic LIKE 'plant-monitoring/%/%/telemetry')
 );
 
 CREATE TABLE IF NOT EXISTS plants_moisture_log (

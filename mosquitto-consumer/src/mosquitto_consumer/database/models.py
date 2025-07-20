@@ -21,7 +21,7 @@ class Plant(Base):
     __table_args__: Tuple[CheckConstraint] = (
         CheckConstraint(
             "topic LIKE 'plant-monitoring/%/%/telemetry'",
-            name="check_topic"
+            name="check_topic_format"
         ),
     )
 
