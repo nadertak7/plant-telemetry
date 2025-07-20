@@ -8,3 +8,6 @@ mosquitto-broker/log
 
 mosquitto-consumer/build/
 mosquitto-consumer/logs/*
+
+webapp/build/
+webapp/logs/*
