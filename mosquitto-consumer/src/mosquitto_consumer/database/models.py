@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Literal, Tuple
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column
 
 from mosquitto_consumer.config.enums import TableNames
@@ -15,13 +15,13 @@ class Plant(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     plant_name: Mapped[str] =  mapped_column(String, unique=True, nullable=False)
+    topic: Mapped[str] = mapped_column(String, unique=True, nullable=False)
 
-    # Add constraints for conflict statement
-    __table_args__: Tuple[UniqueConstraint] = (
-        UniqueConstraint(
-            "id",
-            "plant_name",
-            name="unique_id_plant_name"
+    # Add constraints for topic format which should be enforced by cli function
+    __table_args__: Tuple[CheckConstraint] = (
+        CheckConstraint(
+            "topic LIKE 'plant-monitoring/%/%/telemetry'",
+            name="check_topic"
         ),
     )
 
@@ -48,5 +48,5 @@ class PlantMoistureLog(Base):
         CheckConstraint(
             "adc_value BETWEEN wet_value AND dry_value",
             name="check_adc_value_range"
-        )
+        ),
     )
