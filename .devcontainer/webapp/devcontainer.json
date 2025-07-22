@@ -1,0 +1,30 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-dockerfile
+{
+	"name": "Webapp Devcontainer",
+	
+	"dockerComposeFile": [
+		"../../docker-compose.yml",
+		"./docker-compose.override.yml" // Allows dev container to sleep indefinitely
+	],
+	"service": "webapp",
+
+	"workspaceFolder": "/app",
+
+	// Checks if service is already running on host machine before starting devcontainer
+	"initializeCommand": "bash ./.devcontainer/scripts/check-running-service.sh webapp",
+
+	// Installs dev dependencies that are not installed in the Dockerfile
+	"postCreateCommand": "uv pip install --system --no-cache '.[dev]'",
+
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"meta.pyrefly",
+				"njpwerner.autodocstring",
+				"charliermarsh.ruff"
+			]
+		}
+	}
+}

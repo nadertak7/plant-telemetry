@@ -1,0 +1,4 @@
+services:
+  webapp:
+    volumes:
+      - ./webapp:/app:cached

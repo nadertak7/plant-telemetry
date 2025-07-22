@@ -1,0 +1,13 @@
+/* Page settings */
+.block-container {
+    padding-top: 3rem;
+}
+
+/* Image hover effect */
+.hover-enlarge svg {
+    transition: transform 0.3s ease;
+}
+
+.hover-enlarge svg:hover {
+    transform: scale(1.2);
+}
