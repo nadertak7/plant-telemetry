@@ -1,0 +1,12 @@
+[theme]
+backgroundColor="#000000" # Black
+secondaryBackgroundColor="#F0F2F6" # Light gray
+textColor="#57AD68" # Green
+font="sans serif"
+
+[theme.sidebar]
+backgroundColor="#006400" # Dark green
+textColor="#FFFFFF"
+
+[server]
+runOnSave = true # Allow changes to show instantly on webapp
