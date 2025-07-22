@@ -18,6 +18,9 @@ RUN if [ -f pyproject.toml ]; then \
       echo "No pyproject.toml file found. Skipping installation..."; \
     fi
 
-COPY src/ .
+# Add configuration folder to root
+COPY .streamlit/ .streamlit/
 
-# CMD ["streamlit", "run", "1_homepage.py", "--server.port=8501"]
+COPY src/ src/
+
+CMD ["streamlit", "run", "src/webapp/overview.py", "--server.port=8501"]
