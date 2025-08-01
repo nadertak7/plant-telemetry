@@ -7,4 +7,7 @@ mosquitto-broker/data
 mosquitto-broker/log
 
 mosquitto-consumer/build/
-mosquitto-consumer/logs/*
+mosquitto-consumer/logs/
+
+webapp/build/
+webapp/logs/
