@@ -23,4 +23,4 @@ COPY .streamlit/ .streamlit/
 
 COPY src/ src/
 
-CMD ["streamlit", "run", "src/webapp/overview.py", "--server.port=8501"]
+CMD ["streamlit", "run", "src/webapp/1_overview.py", "--server.port=8501"]
