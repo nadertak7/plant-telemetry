@@ -6,6 +6,7 @@ from webapp.config.constants import CSS_FILE_PATH
 
 
 def load_styles() -> None:
+    """Load css styles from file if they exist. Else alert user with toast."""
     if os.path.exists(CSS_FILE_PATH):
         with open(CSS_FILE_PATH) as styles_file:
             st.markdown(

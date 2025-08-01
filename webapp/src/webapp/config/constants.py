@@ -5,6 +5,8 @@ CSS_FILE_PATH = "src/webapp/styles/main.css"
 
 # Link URLs
 class LinkUrls(Enum):
+    """Encapsulate all external links used on webapp."""
+
     __value__: str
 
     GITHUB_REPO_URL = "https://github.com/nadertak7/plant-telemetry"
