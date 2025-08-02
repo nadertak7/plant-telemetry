@@ -1,23 +1,25 @@
-FROM python:3.12-slim-bookworm
-COPY --from=ghcr.io/astral-sh/uv:0.7.16 /uv /uvx /bin/
+FROM ghcr.io/astral-sh/uv:0.8.4-python3.12-bookworm-slim
 
 WORKDIR /app
 
 ENV PYTHONPATH="/app:/app/src:${PYTHONPATH}" \
-    PATH="/usr/local/bin:${PATH}" \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    UV_LINK_MODE=copy \
+    UV_COMPILE_BYTECODE=1
 
-# Clears previous environemnt cache
-RUN rm -rf /root/.cache/uv
+# Dependency installation layer
+  # Isolate dependency installation. Only reinstalled
+  # if these files are changed
+COPY uv.lock pyproject.toml ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project --no-dev
 
-COPY pyproject.toml* .
-RUN if [ -f pyproject.toml ]; then \
-      uv pip install --system --no-cache .; \
-    else \
-      echo "No pyproject.toml file found. Skipping installation..."; \
-    fi
+# Project installation layer
+COPY src/ src/
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
 
-COPY src/ .
+# Activate project venv
+# See: https://docs.astral.sh/uv/guides/integration/docker/#using-the-environment
+ENV PATH="/app/.venv/bin:$PATH"
 
-CMD ["uv", "run", "mosquitto_consumer/mqtt_consumer_client.py"]
+CMD ["uv", "run", "src/mosquitto_consumer/mqtt_consumer_client.py"]
