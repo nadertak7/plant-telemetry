@@ -11,11 +11,16 @@
 
 	"workspaceFolder": "/app",
 
+	// Override VIRTUAL_ENV to match project path
+	"containerEnv": {
+		"VIRTUAL_ENV": "/app/.venv"
+	},
+
 	// Checks if service is already running on host machine before starting devcontainer
 	"initializeCommand": "bash ./.devcontainer/scripts/check-running-service.sh mosquitto-consumer",
 
 	// Installs dev dependencies that are not installed in the Dockerfile
-	"postCreateCommand": "uv pip install --system --no-cache '.[dev]'",
+	"postCreateCommand": "uv sync --dev --extra test",
 
 	"customizations": {
 		"vscode": {
