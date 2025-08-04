@@ -35,3 +35,10 @@ repos:
     - id: end-of-file-fixer
       name: end-of-file-fixer
       description: Ensure files end with exactly one newline.
+
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: v0.11.0
+    hooks:
+    - id: shellcheck
+      name: shellcheck
+      description: Check shell file syntax.
