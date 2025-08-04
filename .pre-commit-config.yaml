@@ -1,3 +1,7 @@
+# Prerequisites
+# 1. install pre-commit (e.g. `brew install pre-commit`)
+# 2. install uv
+
 repos:
   - repo: local
     hooks:
