@@ -16,7 +16,7 @@ fi
 CONTAINER_NAME_TO_CHECK=$1
 
 echo "Checking if container '$CONTAINER_NAME_TO_CHECK' is running..."
-if [ -n "$(docker ps -q -f name=^/${CONTAINER_NAME_TO_CHECK}$)" ]; then
+if [ -n "$(docker ps -q -f name=^/"${CONTAINER_NAME_TO_CHECK}"$)" ]; then
   echo "Error: Service ('$CONTAINER_NAME_TO_CHECK') is already running."
   echo "Run 'docker compose down' before starting dev container."
   exit 1

@@ -55,7 +55,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-SELECT 
+SELECT
     add_foreign_key_if_not_exists(
         p_table_name=>'plants_moisture_log',
         p_constraint_name=>'fk_plants_moisture_log_plant_id',

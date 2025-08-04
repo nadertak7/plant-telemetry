@@ -11,11 +11,15 @@ dependencies = [
     "sqlalchemy>=2.0.41",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
-    "pyrefly>=0.16.2",
-    "pytest>=8.3.5",
-    "ruff>=0.9.9",
+    "pyrefly>=0.26.1",
+    "ruff>=0.12.7",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.4.1",
 ]
 
 [project.scripts]
@@ -37,6 +41,9 @@ lint.ignore = [
     "D104"
 ]
 line-length = 120
+
+[tool.uv]
+package = true
 
 [tool.pyrefly]
 python_version="3.12"

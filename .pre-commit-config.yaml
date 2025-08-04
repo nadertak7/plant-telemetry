@@ -1,0 +1,56 @@
+# Prerequisites
+# 1. install pre-commit (e.g. `brew install pre-commit`)
+# 2. install uv
+
+repos:
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff
+        description: Lint with ruff.
+        language: system
+        files: ^mosquitto-consumer/src
+        entry: uvx
+        args: ["ruff", "check"]
+        types: [python]
+      - id: pyrefly
+        name: pyrefly
+        description: Type check with pryefly.
+        language: system
+        files: ^mosquitto-consumer/src
+        entry: uvx
+        args: ["pyrefly", "check"]
+        types: [python]
+      # - id: pytest
+      #   name: pytest
+      #   description: Run tests with pytest.
+      #   language: system
+      #   files: ^mosquitto-consumer/src
+      #   entry: uvx
+      #   args: ["pytest"]
+      #   pass_filenames: false
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+    - id: trailing-whitespace
+      name: trailing-whitespace
+      description: Trim trailing whitespace.
+    - id: end-of-file-fixer
+      name: end-of-file-fixer
+      description: Ensure files end with exactly one newline.
+
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: v0.11.0
+    hooks:
+    - id: shellcheck
+      name: shellcheck
+      description: Check shell file syntax.
+
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.5.4
+    hooks:
+    - id: remove-tabs
+      name: remove-tabs
+      description: Convert indentation to 4 spaces.
+      args: [--whitespaces-count, '4']
