@@ -10,10 +10,10 @@ dependencies = [
     "streamlit>=1.47.0",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
-    "pyrefly>=0.24.2",
-    "ruff>=0.12.4",
+    "pyrefly>=0.27.0",
+    "ruff>=0.12.7",
 ]
 
 [tool.ruff]
