@@ -1,7 +1,7 @@
 import streamlit as st
 
 from webapp.config.constants import LinkUrls
-from webapp.public.icons.icons import IconSvg
+from webapp.resources.icons.icons import IconSvg
 
 
 def icon_link(icon_svg: IconSvg, link_url: LinkUrls) -> None:

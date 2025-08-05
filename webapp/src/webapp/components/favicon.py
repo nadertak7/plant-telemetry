@@ -1,6 +1,6 @@
 import base64
 
-from webapp.public.icons.icons import IconSvg
+from webapp.resources.icons.icons import IconSvg
 
 
 def favicon(icon_svg: IconSvg) -> str:
