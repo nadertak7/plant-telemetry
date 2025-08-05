@@ -9,7 +9,7 @@ repos:
         name: ruff
         description: Lint with ruff.
         language: system
-        files: ^mosquitto-consumer/src
+        files: ^(mosquitto-consumer|webapp)/src
         entry: uvx
         args: ["ruff", "check"]
         types: [python]
@@ -17,7 +17,7 @@ repos:
         name: pyrefly
         description: Type check with pryefly.
         language: system
-        files: ^mosquitto-consumer/src
+        files: ^(mosquitto-consumer|webapp)/src
         entry: uvx
         args: ["pyrefly", "check"]
         types: [python]
