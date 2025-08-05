@@ -1,7 +1,6 @@
 import streamlit as st
 
-from webapp.components.favicon import favicon
-from webapp.components.icon_link import icon_link
+from webapp.components.ui import favicon, icon_link
 from webapp.config.constants import LinkUrls
 from webapp.resources.icons.icons import IconSvg
 from webapp.utils.load_styles import load_styles
