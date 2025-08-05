@@ -24,4 +24,3 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 ENV PATH="/app/.venv/bin:$PATH"
 
 CMD ["streamlit", "run", "src/webapp/Homepage.py", "--server.port=8501"]
-
