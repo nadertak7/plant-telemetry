@@ -15,7 +15,7 @@
     "initializeCommand": "bash ./.devcontainer/scripts/check-running-service.sh webapp",
 
     // Installs dev dependencies that are not installed in the Dockerfile
-    "postCreateCommand": "uv pip install --system --no-cache '.[dev]'",
+    "postCreateCommand": "uv sync --dev",
 
     "customizations": {
         "vscode": {
