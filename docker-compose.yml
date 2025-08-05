@@ -54,7 +54,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_SUPER_USER: ${POSTGRES_SUPER_USERNAME}
       POSTGRES_SUPER_PASSWORD: ${POSTGRES_SUPER_PASSWORD}
-    ports: 
+    ports:
       - "8501:8501"
     volumes:
       - ./webapp/logs:/app/logs
