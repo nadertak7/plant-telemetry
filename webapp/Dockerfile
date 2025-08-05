@@ -23,5 +23,5 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # See: https://docs.astral.sh/uv/guides/integration/docker/#using-the-environment
 ENV PATH="/app/.venv/bin:$PATH"
 
-CMD ["streamlit", "run", "src/webapp/1_overview.py", "--server.port=8501"]
+CMD ["streamlit", "run", "src/webapp/Homepage.py", "--server.port=8501"]
 
