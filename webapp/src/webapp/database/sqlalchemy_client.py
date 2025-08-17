@@ -73,13 +73,13 @@ def create_session_factory(
     except exc.OperationalError as exception:
         logger.exception(
             "Error while connecting to psql database %s, ensure credentials are correct.",
-            settings.POSTGRES_DB_HOST
+            host
         )
         raise DatabaseConnectionError() from exception
     except exc.SQLAlchemyError as exception:
         logger.exception(
             "Unexpected error while connecting to psql database %s.",
-            settings.POSTGRES_DB_HOST
+            host
         )
         raise DatabaseConnectionError() from exception
 
