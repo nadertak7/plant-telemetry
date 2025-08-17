@@ -18,19 +18,22 @@ def page_header() -> None:
 
     # Page contents
     with st.container():
-        left_column, middle_column, right_column = st.columns([0.04, 0.46, 0.5])
+        left_column, middle_column, right_column = st.columns([0.05, 0.05, 0.9])
 
         with left_column:
             icon_link(
                 icon_svg=IconSvg.GITHUB_LOGO_ICON,
                 link_url=LinkUrls.GITHUB_REPO_URL
             )
+        with middle_column:
             icon_link(
                 icon_svg=IconSvg.LINKEDIN_LOGO_ICON,
                 link_url=LinkUrls.LINKEDIN_URL
             )
 
-        with middle_column:
+    with st.container():
+        left_column, right_column = st.columns([0.6, 0.4])
+        with left_column:
             st.header("Plant Telemetry", divider="green")
 
     st.write("\n")
