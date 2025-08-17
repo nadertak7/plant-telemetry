@@ -2,8 +2,8 @@ import streamlit as st
 
 from webapp.components.ui import favicon, icon_link
 from webapp.config.constants import LinkUrls
-from webapp.resources.icons.icons import IconSvg
-from webapp.utils.load_styles import load_styles
+from webapp.resources.images.icons import IconSvg
+from webapp.utils.style_management import load_styles
 
 
 def page_header() -> None:

@@ -3,7 +3,7 @@ import base64
 import streamlit as st
 
 from webapp.config.constants import LinkUrls
-from webapp.resources.icons.icons import IconSvg
+from webapp.resources.images.icons import IconSvg
 
 
 def favicon(icon_svg: IconSvg) -> str:
