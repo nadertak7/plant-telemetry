@@ -1,11 +1,10 @@
 from typing import Sequence
 
-from sqlalchemy import RowMapping, Select, select
+from sqlalchemy import Result, RowMapping, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from mosquitto_consumer.config.exceptions import SqlClientError
 from mosquitto_consumer.config.logs import logger
-from mosquitto_consumer.database.models import Plant
 from mosquitto_consumer.database.sql_client import sql_client
 
 
@@ -17,14 +16,22 @@ def add_plant(plant_name: str, topic: str) -> bool:
         topic (str): The topic that the consumer will listen to from the broker
 
     """
+    values_dict: dict = {
+        "plant_name": plant_name,
+        "topic": topic
+    }
     # Add to database
     try:
-        new_plant: Plant = Plant(
-            plant_name=plant_name,
-            topic=topic
-        )
         with sql_client.get_session() as session, session.begin():
-            session.add(new_plant)
+            session.execute(
+                text("""
+                    INSERT INTO plants
+                        (plant_name, topic)
+                    VALUES
+                        (:plant_name, :topic)
+                """),
+                values_dict
+            )
     except SqlClientError:
         logger.exception(f"Error while adding {plant_name} to table.")
         return False
@@ -38,12 +45,12 @@ def add_plant(plant_name: str, topic: str) -> bool:
 
     return True
 
-def retrieve_plant_topics() -> Sequence[RowMapping] | None :
+def retrieve_plant_topics() -> Sequence[RowMapping] | None:
     """Retrieve all the existing topics to subscribe to."""
     try:
         with sql_client.get_session() as session, session.begin():
-            select_statment: Select[tuple[int, str]] = select(Plant.id, Plant.topic)
-            topic_list: Sequence[RowMapping] = session.execute(select_statment).mappings().all()
+            query_result: Result = session.execute(text("SELECT id, topic FROM plants"))
+            topic_list: Sequence[RowMapping] = query_result.mappings().all()
         logger.info("Retrieved %s topics from plants table.", len(topic_list))
     except SqlClientError:
         logger.exception("Error while retrieving topics from plants table.")

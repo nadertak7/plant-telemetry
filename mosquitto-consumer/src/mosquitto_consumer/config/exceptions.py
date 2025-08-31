@@ -27,10 +27,6 @@ class DatabaseConnectionError(SqlClientError):
 
     pass
 
-class SchemaCreationError(SqlClientError):
-    """Raise when SQLAlchemy encounters an error while creating from a specified model."""
-
-    pass
 
 class SqlQueryError(SqlClientError):
     """Raise when SQLAlchemy encounters an error while executing a query."""

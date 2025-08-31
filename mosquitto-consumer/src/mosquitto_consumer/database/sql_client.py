@@ -11,12 +11,10 @@ from sqlalchemy.orm import Session, sessionmaker
 from mosquitto_consumer.config.exceptions import (
     DatabaseConnectionError,
     DialectDriverError,
-    SchemaCreationError,
     SqlQueryError,
 )
 from mosquitto_consumer.config.logs import logger
 from mosquitto_consumer.config.settings import settings
-from mosquitto_consumer.database.models import Base
 
 
 class SqlClient:
@@ -92,21 +90,6 @@ class SqlClient:
             yield session
         finally:
             session.close()
-
-    def create_schema(self) -> None:
-        """Create schema from models.py if it does not exist.
-
-        Raises:
-            SchemaCreationError: Raise if an error occurs when creating the schema from models.py
-
-        """
-        logger.info("Creating schema if it does not exist...")
-        try:
-            Base.metadata.create_all(bind=self.engine)
-            logger.info("Schema created or retained successfully...")
-        except exc.SQLAlchemyError as exception:
-            logger.exception("Error while creating schema.")
-            raise SchemaCreationError() from exception
 
     def execute_sql(
         self, query: str,
