@@ -4,13 +4,13 @@ from typing import Any, Dict, List, Sequence
 
 import paho.mqtt.client as mqtt
 from paho.mqtt.client import Client, ConnectFlags, MQTTMessage, Properties, ReasonCode
-from sqlalchemy import RowMapping, exc, text
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy import RowMapping, exc
 
 from mosquitto_consumer.config.enums import MosquittoSubscribeMethod
 from mosquitto_consumer.config.exceptions import MqttBrokerConnectionError, SqlClientError
 from mosquitto_consumer.config.logs import logger
 from mosquitto_consumer.config.settings import settings
+from mosquitto_consumer.database.models import PlantMoistureLog
 from mosquitto_consumer.database.sql_client import sql_client
 from mosquitto_consumer.utils.plants_utils import retrieve_plant_topics
 
@@ -74,35 +74,24 @@ def on_message(  # noqa: D417
         return
 
     try:
-        # Process data for database insertion
+        # Attempt to create PlantMoistureLog model object
         timestamp: datetime = datetime.fromisoformat(data["timestamp"])
-        moisture_log_entries: Dict = {
-            "plant_id": plant_id,
-            "created_at": timestamp,
-            "adc_value": int(data["adc_value"]),
-            "dry_value":int(data["dry_value"]),
-            "wet_value":int(data["wet_value"]),
-            "moisture_perc":int(data["moisture_perc"])
-        }
+        moisture_log_entry: PlantMoistureLog = PlantMoistureLog(
+            plant_id=plant_id,
+            created_at=timestamp,
+            adc_value=int(data["adc_value"]),
+            dry_value=int(data["dry_value"]),
+            wet_value=int(data["wet_value"]),
+            moisture_perc=int(data["moisture_perc"])
+        )
     except (ValueError, TypeError):
         logger.exception("Error processing data to model. Message may be in incorrect format.")
         return
 
     try:
         with sql_client.get_session() as session, session.begin():
-            session.execute(
-                text("""
-                    INSERT INTO plants_moisture_log
-                        (plant_id, created_at, adc_value, dry_value, wet_value, moisture_perc)
-                    VALUES
-                        (:plant_id, :created_at, :adc_value, :dry_value, :wet_value, :moisture_perc)
-                """),
-                moisture_log_entries
-            )
+            session.add(moisture_log_entry)
             logger.info(f"Successfully inserted moisture log for plant_id {plant_id} at {timestamp}")
-    except ProgrammingError:
-        logger.exception("Programming Error while attempting insert to database. Check schema exists.")
-        return
     except SqlClientError:
         logger.exception("Error while adding record to database.")
         return
@@ -112,6 +101,8 @@ def on_message(  # noqa: D417
 
 def main() -> None:
     """Core logic of mosquitto consumer."""
+    sql_client.create_schema()
+
     mqtt_client: Client = mqtt.Client(
         callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
         client_id = MQTT_CLIENT_NAME,
