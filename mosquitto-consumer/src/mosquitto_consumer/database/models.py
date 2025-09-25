@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Literal, Tuple
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column
 
 from mosquitto_consumer.config.enums import TableNames
@@ -16,6 +16,7 @@ class Plant(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     plant_name: Mapped[str] =  mapped_column(String, unique=True, nullable=False)
     topic: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    is_deprecated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     # Add constraints for topic format which should be enforced by cli function
     __table_args__: Tuple[CheckConstraint] = (
