@@ -1,4 +1,4 @@
-* linguist-detectable=false
+* linguist-detectable=false text=auto eol=lf
 
 # Include only core files
 .devcontainer/scripts/** linguist-detectable=true
