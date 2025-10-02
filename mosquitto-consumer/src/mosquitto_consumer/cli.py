@@ -1,7 +1,7 @@
 from typing import Optional
 
 import click
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from mosquitto_consumer.config.exceptions import SqlClientError
 from mosquitto_consumer.config.logs import logger
@@ -31,7 +31,7 @@ def cli() -> None:
     prompt="Enter the exact <topic_plant_name> in 'plant-monitoring/<location>/<topic_plant_name>/telemetry'.",
     help="The name of the location in the topic. Must match exactly that in the producer to recieve messages."
 )
-def addplant(plant_name: str, topic_plant_name: str, topic_plant_location: str) -> None:
+def add(plant_name: str, topic_plant_name: str, topic_plant_location: str) -> None:
     """Add a plant to the plants table via cli."""
     topic: str = f"plant-monitoring/{topic_plant_location}/{topic_plant_name}/telemetry"
 
@@ -42,10 +42,27 @@ def addplant(plant_name: str, topic_plant_name: str, topic_plant_location: str) 
     click.confirm("Do you want to continue?", abort=True)
 
     click.echo("Adding plant to the database...")
-    # Not possible to SQL inject due to the way SQLAlchemy uses parameterised queries.
-    if add_plant(plant_name, topic):
-        click.echo("Successfully added plant.")
-        click.secho("Warning: Container must be restarted to receive messages from this topic.", fg="yellow")
+
+    try:
+        new_plant: Plant = Plant(
+            plant_name=plant_name,
+            topic=topic
+        )
+        with sql_client.get_session() as session, session.begin():
+            session.add(new_plant)
+    except SqlClientError:
+        logger.exception(f"Error while adding {plant_name} to table.")
+        raise
+    except IntegrityError:
+        # Using error as we do not want to print out whole exception when unneeded.
+        logger.error("One of the values provided matches an existing value in the table. Record not created.")
+        raise
+    except SQLAlchemyError:
+        logger.exception(f"Unexpected error while adding {plant_name} to table.")
+        raise
+
+    click.echo("Successfully added plant.")
+    click.secho("Warning: Container must be restarted to receive messages from this topic.", fg="yellow")
 
 @cli.command
 @click.option(
@@ -79,6 +96,8 @@ def deprecate(plant_id: int, is_deprecated: bool) -> None:
     except SQLAlchemyError:
         logger.exception("Unexpected error while retrieving topics from plants table.")
         raise
+
+    click.echo("Successfully set deprecation status of {selected_plant.plant_name} to {is_deprecated}.")
 
 if __name__ == "__main__":
     cli()
