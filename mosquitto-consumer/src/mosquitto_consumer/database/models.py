@@ -57,3 +57,27 @@ class PlantMoistureLog(Base):
             name="check_adc_value_range"
         ),
     )
+
+class RecommendedPlantMoisture(Base):
+    """Model for plant_moisture_recommended_percentage table."""
+
+    __tablename__: Literal[TableNames.RECOMMENDED_PLANT_MOISTURE] = (
+        TableNames.RECOMMENDED_PLANT_MOISTURE
+    )
+
+    plant_id: Mapped[int] = mapped_column(Integer, ForeignKey('plants.id'), primary_key=True)
+    min_moisture_perc: Mapped[int] = mapped_column(Integer, nullable=False)
+    max_moisture_perc: Mapped[int] = mapped_column(Integer, nullable=False)
+    last_updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__: Tuple[CheckConstraint, CheckConstraint] = (
+        CheckConstraint(
+            "min_moisture_perc BETWEEN 0 AND 100 " \
+            "AND max_moisture_perc BETWEEN 0 AND 100",
+            name="check_recommended_moisture_perc_range"
+        ),
+        CheckConstraint(
+            "max_moisture_perc > min_moisture_perc",
+            name="check_max_greater_than_min"
+        ),
+    )

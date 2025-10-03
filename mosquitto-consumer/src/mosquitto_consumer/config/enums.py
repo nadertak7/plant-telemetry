@@ -8,6 +8,7 @@ class TableNames(StrEnum):
 
     PLANTS = auto()
     PLANTS_MOISTURE_LOG = auto()
+    RECOMMENDED_PLANT_MOISTURE = auto()
 
 class MosquittoSubscribeMethod(Enum):
     """String enums to determine MQTT subscription method."""
