@@ -5,6 +5,6 @@ from fastapi import FastAPI
 app = FastAPI()
 
 @app.get("/")
-def root() -> Dict[str, str]:
+def index() -> Dict[str, str]:
     """Root route."""
     return {"Hello": "World"}
