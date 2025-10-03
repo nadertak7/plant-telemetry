@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        directory: ['./mosquitto-consumer']
+        directory: ['./mosquitto-consumer', './api-server']
     defaults:
       run:
         working-directory: ./${{ matrix.directory }}
