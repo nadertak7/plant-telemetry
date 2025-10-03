@@ -32,7 +32,7 @@ def cli() -> None:
     help="The name of the location in the topic. Must match exactly that in the producer to recieve messages."
 )
 def add(plant_name: str, topic_plant_name: str, topic_plant_location: str) -> None:
-    """Add a plant to the plants table via cli."""
+    """Add a plant to the plants table."""
     topic: str = f"plant-monitoring/{topic_plant_location}/{topic_plant_name}/telemetry"
 
     click.echo("\nAdding plant with the following details:")
@@ -70,7 +70,7 @@ def add(plant_name: str, topic_plant_name: str, topic_plant_location: str) -> No
     help="The id of the plant to be deprecated or de-deprecated."
 )
 def deprecate(plant_id: int) -> None:
-    """Deprecate or de-deprecate a plant_id via cli."""
+    """Deprecate or de-deprecate a plant."""
     try:
         with sql_client.get_session() as session, session.begin():
             selected_plant: Optional[Plant] = session.get(Plant, plant_id)
@@ -116,7 +116,7 @@ def deprecate(plant_id: int) -> None:
     help="The id of the plant which needs moisture values changed."
 )
 def setrange(plant_id: int) -> None:
-    """Set the recommended moisture values of a plant via cli."""
+    """Set the recommended moisture values of a plant."""
     try:
         with sql_client.get_session() as session, session.begin():
             selected_plant: Optional[Plant] = session.get(Plant, plant_id)
