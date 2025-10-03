@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Optional
 
 import click
@@ -78,8 +79,8 @@ def deprecate(plant_id: int) -> None:
                 return
 
             click.echo(f"Select deprecation status for plant {selected_plant.plant_name}")
-            click.echo("\n1. Activate")
-            click.echo("2. Deprecate")
+            click.echo("\n1. Deprecate")
+            click.echo("2. Activate")
 
             is_deprecated: bool = True if click.prompt(
                 "Choice",
@@ -98,6 +99,8 @@ def deprecate(plant_id: int) -> None:
             click.confirm("Do you want to continue?", abort=True)
             click.echo("Adding plant to database.")
             selected_plant.is_deprecated = is_deprecated
+            if is_deprecated:
+                selected_plant.last_deprecated_at = datetime.now(timezone.utc)
     except SqlClientError:
         logger.exception("Error while retrieving topics from plants table.")
         raise
@@ -105,7 +108,7 @@ def deprecate(plant_id: int) -> None:
         logger.exception("Unexpected error while retrieving topics from plants table.")
         raise
 
-    click.echo("Successfully set deprecation status of {selected_plant.plant_name} to {is_deprecated}.")
+    click.echo(f"Successfully set deprecation status of {selected_plant.plant_name} to {is_deprecated}.")
 
 if __name__ == "__main__":
     cli()
