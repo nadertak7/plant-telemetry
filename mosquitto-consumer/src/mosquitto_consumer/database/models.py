@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Literal, Tuple
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column
 
 from mosquitto_consumer.config.enums import TableNames
@@ -16,6 +16,13 @@ class Plant(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     plant_name: Mapped[str] =  mapped_column(String, unique=True, nullable=False)
     topic: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    is_deprecated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc)
+    )
+    last_deprecated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Add constraints for topic format which should be enforced by cli function
     __table_args__: Tuple[CheckConstraint] = (
@@ -48,5 +55,29 @@ class PlantMoistureLog(Base):
         CheckConstraint(
             "adc_value BETWEEN wet_value AND dry_value",
             name="check_adc_value_range"
+        ),
+    )
+
+class RecommendedPlantMoisture(Base):
+    """Model for plant_moisture_recommended_percentage table."""
+
+    __tablename__: Literal[TableNames.RECOMMENDED_PLANT_MOISTURE] = (
+        TableNames.RECOMMENDED_PLANT_MOISTURE
+    )
+
+    plant_id: Mapped[int] = mapped_column(Integer, ForeignKey('plants.id'), primary_key=True)
+    min_moisture_perc: Mapped[int] = mapped_column(Integer, nullable=False)
+    max_moisture_perc: Mapped[int] = mapped_column(Integer, nullable=False)
+    last_updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__: Tuple[CheckConstraint, CheckConstraint] = (
+        CheckConstraint(
+            "min_moisture_perc BETWEEN 0 AND 100 " \
+            "AND max_moisture_perc BETWEEN 0 AND 100",
+            name="check_recommended_moisture_perc_range"
+        ),
+        CheckConstraint(
+            "max_moisture_perc > min_moisture_perc",
+            name="check_max_greater_than_min"
         ),
     )

@@ -23,7 +23,7 @@ test = [
 ]
 
 [project.scripts]
-mosquitto-cli = "mosquitto_consumer.cli:cli"
+consu = "mosquitto_consumer.cli:cli"
 
 [tool.ruff]
 lint.select = [

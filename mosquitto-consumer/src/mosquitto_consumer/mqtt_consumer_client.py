@@ -35,7 +35,9 @@ def on_connect(  # noqa: D417
         logger.info("Successfully connected to MQTT Broker...")
         client.subscribe("plant-monitoring/#", MosquittoSubscribeMethod.EXACTLY_ONCE.value)
         logger.info("Subscribed to topics suffixed with 'plant-monitoring/'")
-        logger.info("Add plants and topics via command line with: mosquitto-cli addplant")
+        logger.info("Add plants and topics via command line with: consu add")
+        logger.info("Deprecate or de-deprecate plants via command line with: consu deprecate")
+        logger.info("Set or update recommended moisture value percentages via command line with: consu deprecate")
     else:
         logger.error("Failed to connect to MQTT broker with error code %s", reason_code)
 
@@ -57,7 +59,7 @@ def on_message(  # noqa: D417
     if topic not in TOPIC_TO_ID_MAPPING:
         logger.warning(f"Received message on an un-mapped topic: {topic}. Ignoring.")
         logger.warning("If a plant was added while this script is running, restart the container.")
-        logger.info("Add plants and topics via command line with: mosquitto-cli addplant")
+        logger.info("Add plants and topics via command line with: consu add")
         return
 
     plant_id: int = TOPIC_TO_ID_MAPPING[topic]
