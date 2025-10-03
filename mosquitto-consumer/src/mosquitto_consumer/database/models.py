@@ -20,7 +20,7 @@ class Plant(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=datetime.now(timezone.utc)
+        server_default=datetime.now(timezone.utc)
     )
     last_deprecated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
 
