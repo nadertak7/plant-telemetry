@@ -46,6 +46,17 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway" # localhost
 
+  api-server:
+    container_name: api-server
+    build: ./api-server
+    depends_on:
+      - postgres
+    volumes:
+      - ./api-server/logs:/app/logs
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+
 volumes:
   postgres-data:
   mosquitto-data:
