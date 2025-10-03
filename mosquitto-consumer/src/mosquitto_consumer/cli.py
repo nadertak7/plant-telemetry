@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from mosquitto_consumer.config.exceptions import SqlClientError
 from mosquitto_consumer.config.logs import logger
-from mosquitto_consumer.database.models import Plant
+from mosquitto_consumer.database.models import Plant, RecommendedPlantMoisture
 from mosquitto_consumer.database.sql_client import sql_client
 
 
@@ -108,7 +108,65 @@ def deprecate(plant_id: int) -> None:
         logger.exception("Unexpected error while retrieving topics from plants table.")
         raise
 
-    click.echo(f"Successfully set deprecation status of {selected_plant.plant_name} to {is_deprecated}.")
+    click.echo(f"Successfully set deprecation status to {is_deprecated}.")
+
+@cli.command
+@click.option(
+    "--plant_id",
+    prompt="Enter the id of the plant to set the range of its recommended moisture values",
+    help="The id of the plant which needs moisture values changed."
+)
+def setrange(plant_id: int) -> None:
+    """Set the recommended moisture values of a plant via cli."""
+    try:
+        with sql_client.get_session() as session, session.begin():
+            selected_plant: Optional[Plant] = session.get(Plant, plant_id)
+            if not selected_plant:
+                click.secho(f"Error: Plant ID {plant_id} does not exist. Try again.", fg="red")
+                return
+
+            minimum_moisture_perc = click.prompt(
+                f"Select the minimum moisture percentage for plant {selected_plant.plant_name}",
+                type=click.IntRange(0, 100)
+            )
+            maximum_moisture_perc = click.prompt(
+                f"Select the maximum moisture percentage for plant {selected_plant.plant_name}",
+                type=click.IntRange(0, 100)
+            )
+
+            if maximum_moisture_perc <= minimum_moisture_perc:
+                click.secho(
+                    "Warning: The maximum percentage cannot be less than or equal to the minimum percentage. " \
+                    "Try again.",
+                    fg="yellow"
+                )
+                return
+
+            click.confirm(
+                f"Setting minimum moisture % to {minimum_moisture_perc} and maximum to {maximum_moisture_perc}. " \
+                "Continue?",
+                abort=True
+            )
+
+            new_recommended_moisture_range = RecommendedPlantMoisture(
+                plant_id = plant_id,
+                min_moisture_perc = minimum_moisture_perc,
+                max_moisture_perc = maximum_moisture_perc,
+                last_updated_at = datetime.now(timezone.utc)
+            )
+            session.merge(new_recommended_moisture_range) # Merge upserts in case plant_id exists in this table already
+
+    except SqlClientError:
+        logger.exception("Error while retrieving topics from plants table.")
+        raise
+    except SQLAlchemyError:
+        logger.exception("Unexpected error while retrieving topics from plants table.")
+        raise
+
+    click.echo(
+        f"Successfully set the minimum moisture % to {minimum_moisture_perc} " \
+        f"and maximum to {maximum_moisture_perc}"
+    )
 
 if __name__ == "__main__":
     cli()
