@@ -77,7 +77,7 @@ def deprecate(plant_id: int) -> None:
                 click.secho(f"Error: Plant ID {plant_id} does not exist. Try again.", fg="red")
                 return
 
-            click.echo("Select deprecation status for plant {selected_plant.plant_name}")
+            click.echo(f"Select deprecation status for plant {selected_plant.plant_name}")
             click.echo("\n1. Activate")
             click.echo("2. Deprecate")
 
@@ -86,6 +86,13 @@ def deprecate(plant_id: int) -> None:
                 type=click.IntRange(1, 2),
                 default=1
             ) == 1 else False
+
+            if is_deprecated == selected_plant.is_deprecated:
+                click.secho(
+                    f"Warning: Plant ID {plant_id} already has a deprecation status of {is_deprecated}.",
+                    fg="yellow"
+                )
+                return
 
             click.echo(f"Setting deprecation status to {is_deprecated} for plant {selected_plant.plant_name}")
             click.confirm("Do you want to continue?", abort=True)
