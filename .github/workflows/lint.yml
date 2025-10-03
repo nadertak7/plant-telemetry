@@ -13,7 +13,7 @@ jobs:
     strategy:
     # Set up parallel jobs (as we add more directories in the future)
       matrix:
-        directory: ['./mosquitto-consumer']
+        directory: ['./mosquitto-consumer', './api-server']
     defaults:
       run:
         working-directory: ./${{ matrix.directory }}
