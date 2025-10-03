@@ -7,7 +7,6 @@ from mosquitto_consumer.config.exceptions import SqlClientError
 from mosquitto_consumer.config.logs import logger
 from mosquitto_consumer.database.models import Plant
 from mosquitto_consumer.database.sql_client import sql_client
-from mosquitto_consumer.utils.plants_utils import add_plant
 
 
 @click.group
@@ -54,7 +53,6 @@ def add(plant_name: str, topic_plant_name: str, topic_plant_location: str) -> No
         logger.exception(f"Error while adding {plant_name} to table.")
         raise
     except IntegrityError:
-        # Using error as we do not want to print out whole exception when unneeded.
         logger.error("One of the values provided matches an existing value in the table. Record not created.")
         raise
     except SQLAlchemyError:
@@ -67,17 +65,10 @@ def add(plant_name: str, topic_plant_name: str, topic_plant_location: str) -> No
 @cli.command
 @click.option(
     "--plant_id",
-    prompt="Enter the id of the plant in the plants table which you would like to set the deprecation status of.",
+    prompt="Enter the id of the plant in the plants table which you would like to set the deprecation status of",
     help="The id of the plant to be deprecated or de-deprecated."
 )
-@click.option(
-    "--is_deprecated",
-    is_flag=True,
-    default=True,
-    prompt="Enter the desired deprecation status of the plant.",
-    help="The desired deprecation status of the plant."
-)
-def deprecate(plant_id: int, is_deprecated: bool) -> None:
+def deprecate(plant_id: int) -> None:
     """Deprecate or de-deprecate a plant_id via cli."""
     try:
         with sql_client.get_session() as session, session.begin():
@@ -85,6 +76,16 @@ def deprecate(plant_id: int, is_deprecated: bool) -> None:
             if not selected_plant:
                 click.secho(f"Error: Plant ID {plant_id} does not exist. Try again.", fg="red")
                 return
+
+            click.echo("Select deprecation status for plant {selected_plant.plant_name}")
+            click.echo("\n1. Activate")
+            click.echo("2. Deprecate")
+
+            is_deprecated: bool = True if click.prompt(
+                "Choice",
+                type=click.IntRange(1, 2),
+                default=1
+            ) == 1 else False
 
             click.echo(f"Setting deprecation status to {is_deprecated} for plant {selected_plant.plant_name}")
             click.confirm("Do you want to continue?", abort=True)
