@@ -97,7 +97,6 @@ def deprecate(plant_id: int) -> None:
 
             click.echo(f"Setting deprecation status to {is_deprecated} for plant {selected_plant.plant_name}")
             click.confirm("Do you want to continue?", abort=True)
-            click.echo("Adding plant to database.")
             selected_plant.is_deprecated = is_deprecated
             if is_deprecated:
                 selected_plant.last_deprecated_at = datetime.now(timezone.utc)
