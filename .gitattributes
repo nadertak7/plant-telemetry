@@ -4,5 +4,5 @@
 .devcontainer/scripts/** linguist-detectable=true
 mosquitto-broker/** linguist-detectable=true
 mosquitto-producer/** linguist-detectable=true
-postgres/** linguist-detectable=true
+postgres/helper-scripts.sql linguist-detectable=true
 mosquitto-consumer/src/mosquitto_consumer/mqtt_consumer_client.py linguist-detectable=true

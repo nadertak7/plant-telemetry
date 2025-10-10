@@ -39,6 +39,7 @@ services:
       POSTGRES_SUPER_PASSWORD: ${POSTGRES_SUPER_PASSWORD}
     volumes:
       - ./mosquitto-consumer/logs:/app/logs
+      - ./postgres/database/models.py:/app/src/mosquitto_consumer/database/models.py:ro
     depends_on:
       - postgres
       - mosquitto-broker
@@ -58,6 +59,7 @@ services:
       - postgres
     volumes:
       - ./api-server/logs:/app/logs
+      - ./postgres/database/models.py:/app/src/api_server/database/models.py:ro
     restart: unless-stopped
     ports:
       - "8000:8000"
