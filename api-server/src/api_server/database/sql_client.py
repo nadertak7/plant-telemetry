@@ -1,5 +1,5 @@
 from dataclasses import asdict, dataclass
-from typing import Any, Callable, Union, overload
+from typing import Any, Callable, Union, cast, overload
 
 from sqlalchemy import Engine, MetaData, create_engine
 from sqlalchemy.engine import URL

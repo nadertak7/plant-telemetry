@@ -1,20 +1,10 @@
-from enum import StrEnum, auto
 from datetime import datetime, timezone
 from typing import Any, Literal, Tuple
 
 from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, declarative_base, mapped_column
 
-
-
-class TableNames(StrEnum):
-    """String enums for Postgres table names."""
-
-    _value_: auto
-
-    PLANTS = auto()
-    PLANTS_MOISTURE_LOG = auto()
-    RECOMMENDED_PLANT_MOISTURE = auto()
+from mosquitto_consumer.config.enums import TableNames
 
 Base: Any = declarative_base()
 
