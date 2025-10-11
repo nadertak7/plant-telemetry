@@ -1,0 +1,5 @@
+services:
+  api-server:
+    volumes:
+      - ./api-server:/app:cached
+    command: sleep infinity

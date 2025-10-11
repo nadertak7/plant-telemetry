@@ -1,0 +1,38 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-dockerfile
+{
+    "name": "API Server Devcontainer",
+
+    "dockerComposeFile": [
+        "../../docker-compose.yml",
+        "./docker-compose.override.yml"
+    ],
+    "service": "api-server",
+
+    "workspaceFolder": "/app",
+
+    // Override VIRTUAL_ENV to match project path
+    "containerEnv": {
+        "VIRTUAL_ENV": "/app/.venv"
+    },
+
+    // Checks if service is already running on host machine before starting devcontainer
+    "initializeCommand": "bash ./.devcontainer/scripts/check-running-service.sh api-server",
+
+    // Installs dev dependencies that are not installed in the Dockerfile
+    "postCreateCommand": "uv sync --dev --extra test",
+
+    // Start uvicorn after dependencies are installed
+    "postStartCommand": "uvicorn api_server.main:app --host 0.0.0.0 --port 8000 --reload",
+
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "meta.pyrefly",
+                "njpwerner.autodocstring",
+                "charliermarsh.ruff"
+            ]
+        }
+    }
+}

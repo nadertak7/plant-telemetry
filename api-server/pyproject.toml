@@ -1,0 +1,44 @@
+[project]
+name = "api-server"
+version = "0.1.0"
+description = "API server for plant telemetry"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.118.0",
+    "psycopg2-binary>=2.9.10",
+    "pydantic-settings>=2.11.0",
+    "sqlalchemy>=2.0.43",
+    "uvicorn>=0.37.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.4.2",
+]
+
+[dependency-groups]
+dev = [
+    "pyrefly>=0.35.0",
+    "ruff>=0.13.3",
+]
+
+[tool.ruff]
+lint.select = [
+    "E",
+    "F",
+    "W",
+    "N",
+    "I",
+    "TRY",
+    "D",
+    "ANN"
+]
+lint.ignore = [
+    "D100",
+    "D104"
+]
+line-length = 120
+
+[tool.pyrefly]
+python_version="3.12"
