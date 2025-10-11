@@ -22,6 +22,9 @@
     // Installs dev dependencies that are not installed in the Dockerfile
     "postCreateCommand": "uv sync --dev --extra test",
 
+    // Start uvicorn after dependencies are installed
+    "postStartCommand": "uvicorn api_server.main:app --host 0.0.0.0 --port 8000 --reload",
+
     "customizations": {
         "vscode": {
             "extensions": [
