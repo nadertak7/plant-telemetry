@@ -1,14 +1,5 @@
-from enum import Enum, StrEnum, auto
+from enum import Enum
 
-
-class TableNames(StrEnum):
-    """String enums for Postgres table names."""
-
-    _value_: auto
-
-    PLANTS = auto()
-    PLANTS_MOISTURE_LOG = auto()
-    RECOMMENDED_PLANT_MOISTURE = auto()
 
 class MosquittoSubscribeMethod(Enum):
     """String enums to determine MQTT subscription method."""

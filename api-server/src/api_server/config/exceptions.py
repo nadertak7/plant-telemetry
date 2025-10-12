@@ -32,13 +32,13 @@ class DatabaseConnectionError(SqlAlchemyOperationError):
             f"Error while connection with connection string {connection_url}, ensure credentials are correct"
         )
 
-class SchemaReflectionError(SqlAlchemyOperationError):
-    """Raise when SQLAlchemy encounters an error when reflecting an existing model."""
+class SchemaCreationError(SqlAlchemyOperationError):
+    """Raise when SQLAlchemy encounters an error when creating a schema from the model."""
 
     def __init__(self, connection_url: URL) -> None:
-        """Create instance of SchemaReflectionError class."""
+        """Create instance of SchemaCreationError class."""
         super().__init__(
-            f"Error while reflecting schema in connection string {connection_url}."
+            f"Error while creating schema in connection string {connection_url}."
         )
 
 class SessionFactoryCreationError(SqlAlchemyOperationError):
@@ -48,4 +48,13 @@ class SessionFactoryCreationError(SqlAlchemyOperationError):
         """Create instance of SchemaReflectionError class."""
         super().__init__(
             f"Error while creating session factory for connection {connection_url}."
+        )
+
+class SessionRetrievalError(SqlAlchemyOperationError):
+    """Raise when there is an error while creating a session factory."""
+
+    def __init__(self) -> None:
+        """Create instance of SessionRetrievalError class."""
+        super().__init__(
+            "Error while retrieving session."
         )

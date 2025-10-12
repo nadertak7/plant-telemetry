@@ -1,21 +1,21 @@
 from dataclasses import asdict, dataclass
-from typing import Any, Callable, Union, cast, overload
+from typing import AsyncGenerator
 
-from sqlalchemy import Engine, MetaData, create_engine
 from sqlalchemy.engine import URL
 from sqlalchemy.exc import NoSuchModuleError, OperationalError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import Session, sessionmaker
 
 from api_server.config.exceptions import (
     ConnectionUrlValidationError,
     DatabaseConnectionError,
     DialectDriverError,
-    SchemaReflectionError,
+    SchemaCreationError,
     SessionFactoryCreationError,
+    SessionRetrievalError,
     SqlAlchemyOperationError,
 )
 from api_server.config.logs import logger
+from api_server.database.models import Base
 
 
 @dataclass
@@ -30,7 +30,7 @@ class _ConnectionUrlArgs:
     database: str
 
 
-class SqlClientBase:
+class SqlClient:
     """Handle SQLAlchemy database logic, including connections, and dynamic queries."""
 
     def __init__(
@@ -41,7 +41,8 @@ class SqlClientBase:
         port: int,
         database: str,
         dialect: str = 'postgresql',
-        driver: str = 'psycopg2',
+        driver: str = 'asyncpg',
+        handle_stale_connections: bool = True
         ) -> None:
         """Instantiate SqlClient class. Attempt a database connection in the constructor.
 
@@ -52,7 +53,9 @@ class SqlClientBase:
             port (int): The port of the database.
             database (str): The name of the schema to connect to.
             dialect (str, optional): The chosen SQL dialect for queries. Defaults to 'postgresql'.
-            driver (str, optional): The python driver in the environment. Defaults to 'psycopg2'.
+            driver (str, optional): The python driver in the environment. Defaults to 'asyncpg'.
+            handle_stale_connections (bool, optional): Choose whether to ping the connection pool for stale connections.
+              defaults to true.
 
         Raises:
             DialectDriverError: Raise if chosen dialect and/or driver are incompatible.
@@ -73,7 +76,10 @@ class SqlClientBase:
             logger.exception("Failed to verify connection url arguments.")
             raise ConnectionUrlValidationError() from exception
 
+        self.handle_stale_connections = handle_stale_connections
         self.connection_url = self._create_connection_url()
+        self.engine = self._create_engine(handle_stale_connections=self.handle_stale_connections)
+        self.sessionmaker = self._create_sessionmaker(expire_on_commit=False)
 
     def _create_connection_url(self) -> URL:
         """Combine arguments passed into the constructor into a SQLAlchemy connection URL string.
@@ -86,26 +92,11 @@ class SqlClientBase:
 
         return connection_url_object
 
-    @overload
-    def _create_engine_factory(
-        self,
-        factory: Callable[..., Engine]
-    ) -> Engine: ...
-
-    @overload
-    def _create_engine_factory(
-        self,
-        factory: Callable[..., AsyncEngine]
-    ) -> AsyncEngine: ...
-
-    def _create_engine_factory(
-        self,
-        factory: Callable[..., Union[Engine, AsyncEngine]]
-    ) -> Union[Engine, AsyncEngine]:
+    def _create_engine(self, handle_stale_connections: bool = True) -> AsyncEngine:
         try:
-            engine = factory(
+            engine = create_async_engine(
                 self.connection_url,
-                pool_pre_ping=True # checks for stale connections
+                pool_pre_ping=handle_stale_connections
             )
         except NoSuchModuleError as exception:
             raise DialectDriverError(self.connection_url_kwargs.drivername) from exception
@@ -116,130 +107,61 @@ class SqlClientBase:
 
         return engine
 
-    @overload
-    def create_sessionmaker_factory(
-        self,
-        factory: type[sessionmaker[Session]],
-        engine: Engine,
-        **sessionmaker_extra_kwargs: Any  # noqa: ANN401
-    ) -> sessionmaker[Session]: ...
+    def _create_sessionmaker(self, expire_on_commit: bool = False) -> async_sessionmaker[AsyncSession]:
+        """Create an asynchronous sessionmaker used to expend sessions.
 
-    @overload
-    def create_sessionmaker_factory(
-        self,
-        factory: type[async_sessionmaker[AsyncSession]],
-        engine: AsyncEngine,
-        **sessionmaker_extra_kwargs: Any  # noqa: ANN401
-    ) -> async_sessionmaker[AsyncSession]: ...
+        Args:
+            expire_on_commit (bool, optional): Do not cache object attributes once session is closed. Defaults to False.
 
-    def create_sessionmaker_factory(
-        self,
-        factory: Union[type[sessionmaker[Session]], type[async_sessionmaker[AsyncSession]]],
-        engine: Union[Engine, AsyncEngine],
-        **sessionmaker_extra_kwargs: Any
-    ) -> Union[sessionmaker[Session], async_sessionmaker[AsyncSession]]:
+        Raises:
+            SessionFactoryCreationError: Raise when there is an issue while creating the session factory.
+
+        Returns:
+            async_sessionmaker[AsyncSession]: The session factory.
+
+        """
         try:
-            session_factory = factory(engine, **sessionmaker_extra_kwargs)  # type: ignore[call-overload]
+            session_factory = async_sessionmaker(
+                self.engine,
+                expire_on_commit=expire_on_commit
+            )
         except SQLAlchemyError as exception:
             raise SessionFactoryCreationError(self.connection_url) from exception
-
         return session_factory
 
-    def reflect_schema_factory(
-        self,
-        factory: Callable[[], MetaData]
-    ) -> MetaData:
+    async def create_schema(self) -> None:
+        """Create the schema in ./postgres/database/models.py.
+
+        Raises:
+            SchemaCreationError: Raise if there is an error while creating the scehema.
+
+        """
+        logger.info("Creating schema if it does not exist...")
         try:
-            reflected_schema = factory()
-        except OperationalError as exception:
-            raise SchemaReflectionError(self.connection_url) from exception
-        except SQLAlchemyError as exception:
-            raise SqlAlchemyOperationError() from exception
-
-        return reflected_schema
-
-class SqlClient(SqlClientBase):
-    """Handle synchronous SQLAlchemy database logic, including connections, and dynamic queries."""
-
-    def __init__(
-        self,
-        username: str,
-        password: str,
-        host: str,
-        port: int,
-        database: str,
-        dialect: str = 'postgresql',
-        driver: str = 'psycopg2',
-        ) -> None:
-        """Instantiate SqlAsyncClient class. Attempt a database connection in the constructor."""
-        super().__init__(
-            username,
-            password,
-            host,
-            port,
-            database,
-            dialect,
-            driver
-        )
-        self.engine = self._create_engine()
-
-    def _create_engine(self) -> Engine:
-        return self._create_engine_factory(create_engine)
-
-    def create_sessionmaker(self) -> sessionmaker[Session]:
-        return self.create_sessionmaker_factory(sessionmaker, self.engine)
-
-    def reflect_schema(self) -> MetaData:
-        def reflect_schema_synchronous() -> MetaData:
-            metadata = MetaData()
-            metadata.reflect(bind=self.engine)
-            return metadata
-
-        return self.reflect_schema_factory(reflect_schema_synchronous)
-
-
-class AsyncSqlClient(SqlClientBase):
-    """Handle synchronous SQLAlchemy database logic, including connections, and dynamic queries."""
-
-    def __init__(
-        self,
-        username: str,
-        password: str,
-        host: str,
-        port: int,
-        database: str,
-        dialect: str = 'postgresql',
-        driver: str = 'psycopg2',
-        ) -> None:
-        """Instantiate SqlAsyncClient class. Attempt a database connection in the constructor."""
-        super().__init__(
-            username,
-            password,
-            host,
-            port,
-            database,
-            dialect,
-            driver
-        )
-        self.engine = self._create_engine()
-
-    def _create_engine(self) -> AsyncEngine:
-        return self._create_engine_factory(create_async_engine)
-
-    def create_sessionmaker(self) -> async_sessionmaker[AsyncSession]:
-        return self.create_sessionmaker_factory(
-            async_sessionmaker,
-            self.engine,
-            expire_on_commit=False
-        )
-
-    async def reflect_schema(self) -> MetaData:
-        try:
-            metadata = MetaData()
             async with self.engine.begin() as conn:
-                await conn.run_sync(metadata.reflect)
-            return metadata
-        except OperationalError as exception:
-            raise SchemaReflectionError(self.connection_url) from exception
+                await conn.run_sync(Base.metadata.create_all)
+            logger.info("Schema created or retained successfully...")
         except SQLAlchemyError as exception:
-            raise SqlAlchemyOperationError() from exception
+            logger.exception("Error while creating schema.")
+            raise SchemaCreationError(self.connection_url) from exception
+
+    async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
+        """Constrain session operation within a context manager.
+
+        Raises:
+            SessionRetrievalError: Raise if there is an error while retrieving the session.
+
+        Yields:
+            AsyncSession: Active database session that commits/rolls back depending on success.
+              The session closes at the end of the context.
+
+        """
+        async with self.sessionmaker() as session:
+            try:
+                yield session
+                await session.commit()
+            except (SQLAlchemyError, Exception) as exception:
+                await session.rollback()
+                raise SessionRetrievalError() from exception
+            finally:
+                await session.close()
