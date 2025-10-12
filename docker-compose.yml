@@ -48,7 +48,10 @@ services:
 
   api-server:
     container_name: api-server
-    build: ./api-server
+    build:
+      # Set context to the root directory as models are taken from ./postgres
+      context: .
+      dockerfile: ./api-server/Dockerfile
     environment:
       POSTGRES_DB_HOST: postgres
       POSTGRES_DB: ${POSTGRES_DB}

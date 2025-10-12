@@ -2,4 +2,5 @@ services:
   api-server:
     volumes:
       - ./api-server:/app:cached
+      - ./postgres/database/models.py:/app/src/api_server/database/models.py:cached
     command: sleep infinity

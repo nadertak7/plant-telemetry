@@ -6,9 +6,12 @@
 CREATE TABLE IF NOT EXISTS plants (
     id INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     plant_name TEXT NOT NULL UNIQUE,
-    topic TEXT NOT NULL UNIQUE
+    topic TEXT NOT NULL UNIQUE,
+    is_deprecated BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    last_deprecated_at TIMESTAMP WITH TIME ZONE,
 
-    CONSTRIANT check_topic_format CHECK (topic LIKE 'plant-monitoring/%/%/telemetry')
+    CONSTRAINT check_topic_format CHECK (topic LIKE 'plant-monitoring/%/%/telemetry')
 );
 
 CREATE TABLE IF NOT EXISTS plants_moisture_log (
@@ -26,6 +29,16 @@ CREATE TABLE IF NOT EXISTS plants_moisture_log (
 
 CREATE INDEX IF NOT EXISTS idx_plants_moisture_logs_plant_id
     ON plants_moisture_log(plant_id);
+
+CREATE TABLE IF NOT EXISTS recommended_plant_moisture (
+    plant_id INT PRIMARY KEY,
+    min_moisture_perc INT NOT NULL,
+    max_moisture_perc INT NOT NULL,
+    last_updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+
+    CONSTRAINT check_recommended_moisture_perc_range CHECK (min_moisture_perc BETWEEN 0 AND 100 AND max_moisture_perc BETWEEN 0 AND 100),
+    CONSTRAINT check_max_greater_than_min CHECK (max_moisture_perc > min_moisture_perc)
+);
 
 -- Create foreign keys if they do not exist
 
@@ -59,6 +72,15 @@ SELECT
     add_foreign_key_if_not_exists(
         p_table_name=>'plants_moisture_log',
         p_constraint_name=>'fk_plants_moisture_log_plant_id',
+        p_column_name=>'plant_id',
+        p_referenced_table=>'plants',
+        p_referenced_column=>'id'
+    );
+
+SELECT
+    add_foreign_key_if_not_exists(
+        p_table_name=>'recommended_plant_moisture',
+        p_constraint_name=>'fk_recommended_plant_moisture_plant_id',
         p_column_name=>'plant_id',
         p_referenced_table=>'plants',
         p_referenced_column=>'id'

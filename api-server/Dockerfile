@@ -9,12 +9,13 @@ ENV PYTHONPATH="/app:/app/src:${PYTHONPATH}" \
 # Dependency installation layer
   # Isolate dependency installation. Only reinstalled
   # if these files are changed
-COPY uv.lock pyproject.toml ./
+COPY ./api-server/uv.lock ./api-server/pyproject.toml ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-dev
 
 # Project installation layer
-COPY src/ src/
+COPY ./api-server/src/ src/
+COPY ./postgres/database/models.py src/api_server/database/models.py
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 

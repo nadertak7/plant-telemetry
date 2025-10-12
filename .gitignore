@@ -14,3 +14,5 @@ mosquitto-consumer/logs/
 
 webapp/build/
 webapp/logs/
+
+api-server/database/models.py
