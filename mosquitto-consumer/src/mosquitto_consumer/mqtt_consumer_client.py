@@ -37,7 +37,7 @@ def on_connect(  # noqa: D417
         logger.info("Subscribed to topics suffixed with 'plant-monitoring/'")
         logger.info("Add plants and topics via command line with: consu add")
         logger.info("Deprecate or de-deprecate plants via command line with: consu deprecate")
-        logger.info("Set or update recommended moisture value percentages via command line with: consu deprecate")
+        logger.info("Set or update recommended moisture value percentages via command line with: consu setrange")
     else:
         logger.error("Failed to connect to MQTT broker with error code %s", reason_code)
 
