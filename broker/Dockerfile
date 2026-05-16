@@ -7,5 +7,5 @@ COPY config/mosquitto.conf /mosquitto/config/mosquitto.conf
 COPY --chmod=755 entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 
-# Default CMD in image - overriden by entrypoint
+# Default CMD in image - sent to entrypoint.
 CMD ["mosquitto", "-c", "/mosquitto/config/mosquitto.conf"]
