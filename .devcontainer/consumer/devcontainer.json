@@ -1,13 +1,13 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-dockerfile
 {
-    "name": "Mosquitto Consumer Devcontainer",
+    "name": "Consumer Devcontainer",
 
     "dockerComposeFile": [
         "../../docker-compose.yml",
         "./docker-compose.override.yml" // Allows dev container to sleep indefinitely
     ],
-    "service": "mosquitto-consumer",
+    "service": "consumer",
 
     "workspaceFolder": "/app",
 
@@ -17,7 +17,7 @@
     },
 
     // Checks if service is already running on host machine before starting devcontainer
-    "initializeCommand": "bash ./.devcontainer/scripts/check-running-service.sh mosquitto-consumer",
+    "initializeCommand": "bash ./.devcontainer/scripts/check-running-service.sh consumer",
 
     // Installs dev dependencies that are not installed in the Dockerfile
     "postCreateCommand": "uv sync --dev --extra test",

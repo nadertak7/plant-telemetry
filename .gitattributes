@@ -2,7 +2,7 @@
 
 # Include only core files
 .devcontainer/scripts/** linguist-detectable=true
-mosquitto-broker/** linguist-detectable=true
-mosquitto-producer/** linguist-detectable=true
-postgres/** linguist-detectable=true
-mosquitto-consumer/src/mosquitto_consumer/mqtt_consumer_client.py linguist-detectable=true
+broker/** linguist-detectable=true
+sensor/** linguist-detectable=true
+database/** linguist-detectable=true
+consumer/src/mosquitto_consumer/mqtt_consumer_client.py linguist-detectable=true

@@ -1,21 +1,21 @@
 services:
-  mosquitto-broker:
-    container_name: mosquitto-broker
-    build: ./mosquitto-broker
+  broker:
+    container_name: broker
+    build: ./broker
     environment:
       MQTT_USERNAME: ${MQTT_USERNAME}
       MQTT_PASSWORD: ${MQTT_PASSWORD}
     ports:
       - "1883:1883"
     volumes:
-      - ./mosquitto-broker/config:/mosquitto/config:rw
-      - ./mosquitto-broker/log:/mosquitto/log
+      - ./broker/config:/mosquitto/config:rw
+      - ./broker/log:/mosquitto/log
       - mosquitto-data:/mosquitto/data
     restart: unless-stopped
 
-  postgres:
+  database:
     image: postgres:17.5
-    container_name: postgres
+    container_name: database
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_SUPER_USERNAME}
@@ -26,22 +26,22 @@ services:
       - postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
 
-  mosquitto-consumer:
-    container_name: mosquitto-consumer
-    build: ./mosquitto-consumer
+  consumer:
+    container_name: consumer
+    build: ./consumer
     environment:
-      POSTGRES_DB_HOST: postgres
-      MQTT_BROKER_HOST: mosquitto-broker
+      POSTGRES_DB_HOST: database
+      MQTT_BROKER_HOST: broker
       MQTT_USERNAME: ${MQTT_USERNAME}
       MQTT_PASSWORD: ${MQTT_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_SUPER_USER: ${POSTGRES_SUPER_USERNAME}
       POSTGRES_SUPER_PASSWORD: ${POSTGRES_SUPER_PASSWORD}
     volumes:
-      - ./mosquitto-consumer/logs:/app/logs
+      - ./consumer/logs:/app/logs
     depends_on:
-      - postgres
-      - mosquitto-broker
+      - database
+      - broker
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway" # localhost

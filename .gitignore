@@ -1,16 +1,1 @@
 .env
-.venv
-.pytest_cache
-*.pyc
-*.egg-info
-__pycache__/
-
-mosquitto-broker/config/pwfile
-mosquitto-broker/data
-mosquitto-broker/log
-
-mosquitto-consumer/build/
-mosquitto-consumer/logs/
-
-webapp/build/
-webapp/logs/
