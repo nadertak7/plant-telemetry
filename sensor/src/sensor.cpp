@@ -4,7 +4,7 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 
-#include "wifi_secrets.h"
+#include "secrets.h"
 
 WiFiClient g_wifi_client;
 PubSubClient g_client(g_wifi_client);
@@ -15,15 +15,6 @@ const char* kMqttClientId = "ESP8266_Sensor_01";
 const char* kMqttTopic = "plant-monitoring/living-room/scarlet-star-1/telemetry";
 const int kAdcValueDry = 666;
 const int kAdcValueWet = 272;
-
-// Wifi Secrets from wifi_secrets.h
-const char* kWifiSsid = WIFI_SSID;
-const char* kWifiPassword = WIFI_PASS;
-
-// MQTT settings
-const char* kMqttBrokerAddress = MQTT_BROKER_IP;
-const char* kMqttUsername = MQTT_USERNAME;
-const char* kMqttPassword = MQTT_PASSWORD;
 
 // Retry settings
 const int kMqttMaxRetries = 5;
@@ -133,6 +124,7 @@ void setup() {
     Serial.println("Sensor not likely connected. Sleeping indefinitely...");
     ESP.deepSleep(0); // Infinite
   }
+  Serial.printf("\nLogged moisture reading: %d", adc_value_reading);
   String payload = GetJsonPayload(adc_value_reading);
 
   if (ConnectWifi() && ConnectMqtt() && SyncTime()) {
