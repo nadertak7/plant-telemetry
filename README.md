@@ -1,1 +1,1 @@
-# plant-moisture-sensor
+# plant-telemetry

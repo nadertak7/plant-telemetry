@@ -5,4 +5,3 @@
 broker/** linguist-detectable=true
 sensor/** linguist-detectable=true
 database/** linguist-detectable=true
-consumer/src/mosquitto_consumer/mqtt_consumer_client.py linguist-detectable=true
