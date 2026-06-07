@@ -20,4 +20,4 @@ if [ -n "$(docker ps -q -f name=^/"${CONTAINER_NAME_TO_CHECK}"$)" ]; then
   echo "Error: Service ('$CONTAINER_NAME_TO_CHECK') is already running."
   echo "Run 'docker compose down' before starting dev container."
   exit 1
-fi123!!!
+fi
