@@ -1,13 +1,13 @@
 [workspace]
 resolver = "3"
 
-members = ["shared", "consumer"]
+members = ["consumer", "shared"]
 
 [workspace.dependencies]
-sqlx = { version = "~0.9", features = [ "postgres", "runtime-tokio" ] }
-serde = { version = "~1.0", features = ["derive"] }
-dotenvy = { version = "~0.15.7" }
-log = "~0.4.33"
-env_logger = "~0.11.11"
 anyhow = "1.0.103"
+dotenvy = { version = "~0.15.7" }
+env_logger = "~0.11.11"
+log = "~0.4.33"
+serde = { version = "~1.0", features = ["derive"] }
+sqlx = { version = "~0.9", features = ["postgres", "runtime-tokio"] }
 tokio = { version = "1.52.3", features = ["macros", "rt-multi-thread"] }

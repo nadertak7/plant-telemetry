@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-dotenvy = { workspace = true }
-log = { workspace = true }
-env_logger = { workspace = true }
-sqlx = { workspace = true }
 anyhow = { workspace = true }
+dotenvy = { workspace = true }
+env_logger = { workspace = true }
+log = { workspace = true }
+sqlx = { workspace = true }
