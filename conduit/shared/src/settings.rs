@@ -26,6 +26,10 @@ pub struct Settings {
 }
 
 impl Settings {
+    fn missing_env_var_context(env_var_name: &str) -> String {
+        format!("Could not find {env_var_name} in environment.")
+    }
+
     pub fn load() -> anyhow::Result<Settings> {
         if let Err(err) = dotenvy::dotenv() {
             log::warn!("Unable to find .env file: {err}");
@@ -35,11 +39,11 @@ impl Settings {
                 host: "127.0.0.1".to_string(),
                 port: 5432,
                 username: env::var("POSTGRES_SUPER_USERNAME")
-                    .context("Could not find POSTGRES_SUPER_USERNAME in environment.")?,
+                    .with_context(|| Self::missing_env_var_context("POSTGRES_SUPER_USERNAME"))?,
                 password: env::var("POSTGRES_SUPER_PASSWORD")
-                    .context("Could not find POSTGRES_SUPER_PASSWORD in environment.")?,
+                    .with_context(|| Self::missing_env_var_context("POSTGRES_SUPER_PASSWORD"))?,
                 database: env::var("POSTGRES_DB")
-                    .context("Could not find POSTGRES_DB in environment.")?,
+                    .with_context(|| Self::missing_env_var_context("POSTGRES_DB"))?,
             },
         })
     }
