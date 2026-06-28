@@ -8,3 +8,4 @@ dotenvy = { workspace = true }
 log = { workspace = true }
 env_logger = { workspace = true }
 sqlx = { workspace = true }
+anyhow = { workspace = true }

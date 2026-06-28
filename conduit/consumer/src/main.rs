@@ -1,9 +1,8 @@
 use shared::logger;
 use shared::settings::Settings;
-use std::error::Error;
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> anyhow::Result<()> {
     logger::initialise();
-    let _ = Settings::load()?;
+    let _settings = Settings::load()?;
     Ok(())
 }

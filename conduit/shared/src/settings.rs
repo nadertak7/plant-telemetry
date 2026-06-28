@@ -1,6 +1,6 @@
+use anyhow::Context;
 use sqlx::postgres::PgConnectOptions;
 use std::env;
-use std::error::Error;
 
 pub struct DatabaseSettings {
     host: String,
@@ -26,7 +26,7 @@ pub struct Settings {
 }
 
 impl Settings {
-    pub fn load() -> Result<Settings, Box<dyn Error>> {
+    pub fn load() -> anyhow::Result<Settings> {
         if let Err(err) = dotenvy::dotenv() {
             log::warn!("Unable to find .env file: {err}");
         }
@@ -34,9 +34,12 @@ impl Settings {
             database_settings: DatabaseSettings {
                 host: "127.0.0.1".to_string(),
                 port: 5432,
-                username: env::var("POSTGRES_SUPER_USERNAME")?,
-                password: env::var("POSTGRES_SUPER_PASSWORD")?,
-                database: env::var("POSTGRES_DB")?,
+                username: env::var("POSTGRES_SUPER_USERNAME")
+                    .context("Could not find POSTGRES_SUPER_USERNAME in environment.")?,
+                password: env::var("POSTGRES_SUPER_PASSWORD")
+                    .context("Could not find POSTGRES_SUPER_PASSWORD in environment.")?,
+                database: env::var("POSTGRES_DB")
+                    .context("Could not find POSTGRES_DB in environment.")?,
             },
         })
     }
