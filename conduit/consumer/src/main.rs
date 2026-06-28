@@ -1,8 +1,11 @@
+use shared::db;
 use shared::logger;
 use shared::settings::Settings;
 
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     logger::initialise();
-    let _settings = Settings::load()?;
+    let settings = Settings::load()?;
+    let _pool = db::create_connection_pool(&settings.database_settings).await?;
     Ok(())
 }

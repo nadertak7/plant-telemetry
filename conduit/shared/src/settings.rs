@@ -8,6 +8,7 @@ pub struct DatabaseSettings {
     username: String,
     password: String,
     database: String,
+    pub max_connections: u32,
 }
 
 impl DatabaseSettings {
@@ -44,6 +45,7 @@ impl Settings {
                     .with_context(|| Self::missing_env_var_context("POSTGRES_SUPER_PASSWORD"))?,
                 database: env::var("POSTGRES_DB")
                     .with_context(|| Self::missing_env_var_context("POSTGRES_DB"))?,
+                max_connections: 5,
             },
         })
     }
