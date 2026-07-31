@@ -4,6 +4,7 @@ use shared::settings::Settings;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    dotenvy::dotenv().ok();
     logger::initialise();
     let settings = Settings::new()?;
     let pool = db::create_connection_pool(&settings.database_settings).await?;
