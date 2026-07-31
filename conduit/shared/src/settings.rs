@@ -3,22 +3,15 @@ use sqlx::postgres::PgConnectOptions;
 use std::env;
 
 pub struct DatabaseSettings {
-    host: String,
-    port: u16,
-    username: String,
-    password: String,
-    database: String,
+    database_url: String,
     pub max_connections: u32,
 }
 
 impl DatabaseSettings {
-    pub fn connect_options(&self) -> PgConnectOptions {
-        PgConnectOptions::new()
-            .host(&self.host)
-            .port(self.port)
-            .username(&self.username)
-            .password(&self.password)
-            .database(&self.database)
+    pub fn connect_options(&self) -> anyhow::Result<PgConnectOptions> {
+        self.database_url
+            .parse()
+            .context("Failed to parse database URL.")
     }
 }
 
@@ -27,24 +20,11 @@ pub struct Settings {
 }
 
 impl Settings {
-    fn missing_env_var_context(env_var_name: &str) -> String {
-        format!("Could not find {env_var_name} in environment.")
-    }
-
-    pub fn load() -> anyhow::Result<Settings> {
-        if let Err(err) = dotenvy::dotenv() {
-            log::warn!("Unable to find .env file: {err}");
-        }
+    pub fn new() -> anyhow::Result<Settings> {
         Ok(Settings {
             database_settings: DatabaseSettings {
-                host: "127.0.0.1".to_string(),
-                port: 5432,
-                username: env::var("POSTGRES_SUPER_USERNAME")
-                    .with_context(|| Self::missing_env_var_context("POSTGRES_SUPER_USERNAME"))?,
-                password: env::var("POSTGRES_SUPER_PASSWORD")
-                    .with_context(|| Self::missing_env_var_context("POSTGRES_SUPER_PASSWORD"))?,
-                database: env::var("POSTGRES_DB")
-                    .with_context(|| Self::missing_env_var_context("POSTGRES_DB"))?,
+                database_url: env::var("DATABASE_URL")
+                    .context("Could not find DATABASE_URL in environment.")?,
                 max_connections: 5,
             },
         })
