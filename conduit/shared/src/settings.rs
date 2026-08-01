@@ -22,7 +22,7 @@ pub struct MqttSettings {
     port: u16,
     username: String,
     password: String,
-    keep_alive_seconds: u64,
+    keep_alive_seconds: Duration,
     pub subscribe_topic: String,
     pub request_queue_capacity: usize,
     pub quality_of_service: QoS,
@@ -33,7 +33,7 @@ impl MqttSettings {
         let mut mqtt_options = MqttOptions::new(&self.id, &self.host, self.port);
         mqtt_options
             .set_credentials(&self.username, &self.password)
-            .set_keep_alive(Duration::from_secs(self.keep_alive_seconds));
+            .set_keep_alive(self.keep_alive_seconds);
         mqtt_options
     }
 }
@@ -60,7 +60,7 @@ impl Settings {
                 password: env::var("MQTT_PASSWORD")
                     .context("Could not find MQTT_PASSWORD in environment.")?,
                 subscribe_topic: "sensor/+".to_string(),
-                keep_alive_seconds: 60,
+                keep_alive_seconds: Duration::from_secs(60),
                 request_queue_capacity: 10,
                 quality_of_service: QoS::AtMostOnce,
             },
