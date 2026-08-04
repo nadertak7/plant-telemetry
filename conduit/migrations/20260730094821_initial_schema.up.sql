@@ -48,11 +48,15 @@ CREATE TABLE plant_telemetry (
     sensor_id INT NOT NULL REFERENCES sensor(id),
     adc INT NOT NULL,
     moisture_perc SMALLINT NOT NULL,
+    recorded_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     CONSTRAINT ck_plant_telemetry_moisture_perc
         CHECK (moisture_perc BETWEEN 0 AND 100)
 );
 
-CREATE INDEX ix_plant_telemetry_plant_id_created_at
-    ON plant_telemetry(plant_id, created_at DESC);
+CREATE UNIQUE INDEX ux_plant_telemetry_sensor_id_recorded_at
+    ON plant_telemetry(sensor_id, recorded_at);
+
+CREATE INDEX ix_plant_telemetry_plant_id_recorded_at
+    ON plant_telemetry(plant_id, recorded_at DESC);
