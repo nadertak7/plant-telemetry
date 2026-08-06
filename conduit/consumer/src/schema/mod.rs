@@ -1,1 +1,1 @@
-pub mod sensor;
+pub mod message;

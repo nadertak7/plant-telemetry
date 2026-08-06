@@ -5,8 +5,7 @@ use shared::settings::Settings;
 use std::time::Duration;
 use tracing::Level;
 
-use crate::schema::sensor::SensorPayload;
-
+mod handler;
 mod mqtt;
 mod schema;
 
@@ -23,21 +22,7 @@ async fn main() -> anyhow::Result<()> {
     tracing::event!(Level::INFO, "Starting poll.");
     loop {
         match event_loop.poll().await {
-            Ok(Event::Incoming(Packet::Publish(message))) => {
-                let sensor_payload: SensorPayload = match serde_json::from_slice(&message.payload) {
-                    Ok(payload) => payload,
-                    Err(e) => {
-                        tracing::warn!(
-                            topic = message.topic,
-                            payload = ?message.payload,
-                            error = %e,
-                            "Error parsing payload."
-                        );
-                        continue;
-                    }
-                };
-                tracing::info!(topic=message.topic, payload=?sensor_payload, "Parsed sensor payload.")
-            }
+            Ok(Event::Incoming(Packet::Publish(message))) => handler::handle_message(&message),
             Ok(_) => {}
             Err(e) => {
                 tracing::error!(error=%e, "MQTT connection error.");
