@@ -10,3 +10,4 @@ env_logger = { workspace = true }
 log = { workspace = true }
 rumqttc = { workspace = true }
 sqlx = { workspace = true }
+tracing-subscriber = { workspace = true }

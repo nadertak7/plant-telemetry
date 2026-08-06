@@ -1,3 +1,3 @@
 pub fn initialise() {
-    env_logger::init();
+    tracing_subscriber::fmt::init()
 }

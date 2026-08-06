@@ -3,6 +3,7 @@ use shared::db;
 use shared::logger;
 use shared::settings::Settings;
 use std::time::Duration;
+use tracing::Level;
 
 use crate::schema::sensor::SensorPayload;
 
@@ -19,28 +20,27 @@ async fn main() -> anyhow::Result<()> {
     let (mqtt_client, mut event_loop) = mqtt::get_client(&settings.mqtt_settings);
     mqtt::subscribe(&mqtt_client, &settings.mqtt_settings).await?;
 
-    println!("Starting to poll");
+    tracing::event!(Level::INFO, "Starting poll.");
     loop {
         match event_loop.poll().await {
             Ok(Event::Incoming(Packet::Publish(message))) => {
                 let sensor_payload: SensorPayload = match serde_json::from_slice(&message.payload) {
                     Ok(payload) => payload,
                     Err(e) => {
-                        println!(
-                            "Failed to parse payload. Topic: {}. Payload: {:?}. Error: {e}.",
-                            &message.topic, &message.payload
+                        tracing::warn!(
+                            topic = message.topic,
+                            payload = ?message.payload,
+                            error = %e,
+                            "Error parsing payload."
                         );
                         continue;
                     }
                 };
-                println!(
-                    "Successfully parsed SensorPayload: topic: {}, adc: {}, timestamp: {}",
-                    message.topic, sensor_payload.adc, sensor_payload.timestamp
-                );
+                tracing::info!(topic=message.topic, payload=?sensor_payload, "Parsed sensor payload.")
             }
             Ok(_) => {}
             Err(e) => {
-                println!("MqttError: {e}");
+                tracing::error!(error=%e, "MQTT connection error.");
                 tokio::time::sleep(Duration::from_secs(5)).await;
             }
         }
