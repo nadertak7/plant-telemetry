@@ -1,11 +1,13 @@
-use std::time::Duration;
-
 use rumqttc::{Event, Packet};
 use shared::db;
 use shared::logger;
 use shared::settings::Settings;
+use std::time::Duration;
+
+use crate::schema::sensor::SensorPayload;
 
 mod mqtt;
+mod schema;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -21,15 +23,25 @@ async fn main() -> anyhow::Result<()> {
     loop {
         match event_loop.poll().await {
             Ok(Event::Incoming(Packet::Publish(message))) => {
+                let sensor_payload: SensorPayload = match serde_json::from_slice(&message.payload) {
+                    Ok(payload) => payload,
+                    Err(e) => {
+                        println!(
+                            "Failed to parse payload. Topic: {}. Payload: {:?}. Error: {e}.",
+                            &message.topic, &message.payload
+                        );
+                        continue;
+                    }
+                };
                 println!(
-                    "Received payload. Topic: {}. Payload: {:?}",
-                    message.topic, message.payload
+                    "Successfully parsed SensorPayload: topic: {}, adc: {}, timestamp: {}",
+                    message.topic, sensor_payload.adc, sensor_payload.timestamp
                 );
             }
             Ok(_) => {}
             Err(e) => {
                 println!("MqttError: {e}");
-                tokio::time::sleep(Duration::from_secs(1)).await;
+                tokio::time::sleep(Duration::from_secs(5)).await;
             }
         }
     }
