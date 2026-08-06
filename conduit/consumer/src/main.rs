@@ -23,7 +23,9 @@ async fn main() -> anyhow::Result<()> {
     loop {
         match event_loop.poll().await {
             Ok(Event::Incoming(Packet::Publish(message))) => {
-                handler::handle_message(&message, &pool).await
+                // Spawn task per message to not block mqtt event loop.
+                let pool_cloned = pool.clone();
+                tokio::spawn(async move { handler::handle_message(&message, &pool_cloned).await });
             }
             Ok(_) => {}
             Err(e) => {
