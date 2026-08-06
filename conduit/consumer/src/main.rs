@@ -22,7 +22,9 @@ async fn main() -> anyhow::Result<()> {
     tracing::event!(Level::INFO, "Starting poll.");
     loop {
         match event_loop.poll().await {
-            Ok(Event::Incoming(Packet::Publish(message))) => handler::handle_message(&message),
+            Ok(Event::Incoming(Packet::Publish(message))) => {
+                handler::handle_message(&message, &pool).await
+            }
             Ok(_) => {}
             Err(e) => {
                 tracing::error!(error=%e, "MQTT connection error.");
