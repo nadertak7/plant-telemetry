@@ -4,9 +4,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum HandlerError {
-    #[error("Error parsing payload.")]
+    #[error("Error parsing payload: {0}.")]
     PayloadParseError(#[from] serde_json::Error),
-    #[error("Error querying database.")]
+    #[error("Error querying database: {0}.")]
     QueryError(#[from] sqlx::Error),
     #[error("Topic from message was not found. Register the sensor that is bound to the topic.")]
     SensorNotRegistered,
