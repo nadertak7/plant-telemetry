@@ -25,9 +25,15 @@ async fn get_sensor_record(topic: &str, pool: &PgPool) -> Result<Option<Sensor>,
     .await
 }
 
-async fn try_handle_message(topic: &str, payload: &[u8], pool: &PgPool) -> Result<(), HandlerError> {
+async fn try_handle_message(
+    topic: &str,
+    payload: &[u8],
+    pool: &PgPool,
+) -> Result<(), HandlerError> {
     let _ = parse_payload(payload)?;
-    let _ = get_sensor_record(topic, pool).await?.ok_or(HandlerError::SensorNotRegistered)?;
+    let _ = get_sensor_record(topic, pool)
+        .await?
+        .ok_or(HandlerError::SensorNotRegistered)?;
     Ok(())
 }
 
@@ -39,6 +45,8 @@ pub async fn handle_message(message: &Publish, pool: &PgPool) {
         Err(e) if e.is_operational_error() => {
             tracing::error!(topic=topic, payload=?payload, error=%e, "There was an error while handling the message.");
         }
-        Err(e) => tracing::warn!(topic=topic, payload=?payload, error=%e, "Ignoring unprocessable message.")
+        Err(e) => {
+            tracing::warn!(topic=topic, payload=?payload, error=%e, "Ignoring unprocessable message.")
+        }
     }
 }

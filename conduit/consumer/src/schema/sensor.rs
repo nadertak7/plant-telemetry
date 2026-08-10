@@ -9,14 +9,14 @@ pub enum HandlerError {
     #[error("Error querying database.")]
     QueryError(#[from] sqlx::Error),
     #[error("Topic from message was not found. Register the sensor that is bound to the topic.")]
-    SensorNotRegistered
+    SensorNotRegistered,
 }
 
 impl HandlerError {
     pub fn is_operational_error(&self) -> bool {
         match self {
             Self::QueryError(_) => true,
-            _ => false
+            _ => false,
         }
     }
 }
