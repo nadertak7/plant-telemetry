@@ -3,7 +3,6 @@ use shared::db;
 use shared::logger;
 use shared::settings::Settings;
 use std::time::Duration;
-use tracing::Level;
 
 mod handler;
 mod mqtt;
@@ -19,7 +18,7 @@ async fn main() -> anyhow::Result<()> {
     let (mqtt_client, mut event_loop) = mqtt::get_client(&settings.mqtt_settings);
     mqtt::subscribe(&mqtt_client, &settings.mqtt_settings).await?;
 
-    tracing::event!(Level::INFO, "Starting poll.");
+    tracing::info!("Starting poll.");
     loop {
         match event_loop.poll().await {
             Ok(Event::Incoming(Packet::Publish(message))) => {

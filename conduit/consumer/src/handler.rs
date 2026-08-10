@@ -1,28 +1,13 @@
-use crate::schema::message::SensorPayload;
-use crate::schema::sensor::Sensor;
+use crate::schema::sensor::{HandlerError, Sensor, SensorPayload};
 use rumqttc::Publish;
 use sqlx::PgPool;
 
-fn parse_payload(message: &Publish) -> Option<SensorPayload> {
-    match serde_json::from_slice(&message.payload) {
-        Ok(payload) => {
-            tracing::info!(topic=message.topic, payload=?payload, "Parsed sensor payload.");
-            Some(payload)
-        }
-        Err(e) => {
-            tracing::warn!(
-              topic = message.topic,
-                payload = ?message.payload,
-                error = %e,
-                "Error parsing payload."
-            );
-            None
-        }
-    }
+fn parse_payload(payload: &[u8]) -> Result<SensorPayload, serde_json::Error> {
+    serde_json::from_slice(payload)
 }
 
-async fn get_sensor_record(topic: &String, pool: &PgPool) -> Option<Sensor> {
-    let result = sqlx::query_as!(
+async fn get_sensor_record(topic: &str, pool: &PgPool) -> Result<Option<Sensor>, sqlx::Error> {
+    sqlx::query_as!(
         Sensor,
         r#"
         SELECT
@@ -37,32 +22,23 @@ async fn get_sensor_record(topic: &String, pool: &PgPool) -> Option<Sensor> {
         topic
     )
     .fetch_optional(pool)
-    .await;
+    .await
+}
 
-    match result {
-        Ok(Some(sensor)) => {
-            tracing::info!(topic=topic, sensor=?sensor, "Successfully retrieved sensor record.");
-            Some(sensor)
-        }
-        Ok(None) => {
-            tracing::info!(
-                topic = topic,
-                "Received message for a non-existent topic. Register the sensor."
-            );
-            None
-        }
-        Err(e) => {
-            tracing::warn!(topic=topic, error=%e, "Error querying topic.");
-            None
-        }
-    }
+async fn try_handle_message(topic: &str, payload: &[u8], pool: &PgPool) -> Result<(), HandlerError> {
+    let _ = parse_payload(payload)?;
+    let _ = get_sensor_record(topic, pool).await?.ok_or(HandlerError::SensorNotRegistered)?;
+    Ok(())
 }
 
 pub async fn handle_message(message: &Publish, pool: &PgPool) {
-    let Some(_) = parse_payload(message) else {
-        return;
-    };
-    let Some(_) = get_sensor_record(&message.topic, pool).await else {
-        return;
-    };
+    let payload = &message.payload;
+    let topic = &message.topic;
+    match try_handle_message(topic, payload, pool).await {
+        Ok(()) => tracing::info!(topic=topic, payload=?payload, "Successfully handled message."),
+        Err(e) if e.is_operational_error() => {
+            tracing::error!(topic=topic, payload=?payload, error=%e, "There was an error while handling the message.");
+        }
+        Err(e) => tracing::warn!(topic=topic, payload=?payload, error=%e, "Ignoring unprocessable message.")
+    }
 }
