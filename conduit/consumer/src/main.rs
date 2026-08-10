@@ -1,12 +1,11 @@
+mod handler;
+mod mqtt;
+
 use rumqttc::{Event, Packet};
 use shared::db;
 use shared::logger;
 use shared::settings::Settings;
 use std::time::Duration;
-
-mod handler;
-mod mqtt;
-mod schema;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

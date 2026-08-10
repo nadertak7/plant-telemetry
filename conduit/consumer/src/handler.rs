@@ -1,5 +1,9 @@
-use crate::schema::sensor::{HandlerError, Sensor, SensorPayload};
+mod error;
+mod schema;
+
+use error::HandlerError;
 use rumqttc::Publish;
+use schema::{Sensor, SensorPayload};
 use sqlx::PgPool;
 
 fn parse_payload(payload: &[u8]) -> Result<SensorPayload, serde_json::Error> {
@@ -42,11 +46,11 @@ pub async fn handle_message(message: &Publish, pool: &PgPool) {
     let topic = &message.topic;
     match try_handle_message(topic, payload, pool).await {
         Ok(()) => tracing::info!(topic=topic, payload=?payload, "Successfully handled message."),
-        Err(e) if e.is_operational_error() => {
-            tracing::error!(topic=topic, payload=?payload, error=%e, "There was an error while handling the message.");
+        Err(e) if e.is_transient() => {
+            tracing::warn!(topic=topic, payload=?payload, error=%e, "Ignoring unprocessable message.");
         }
         Err(e) => {
-            tracing::warn!(topic=topic, payload=?payload, error=%e, "Ignoring unprocessable message.")
+            tracing::error!(topic=topic, payload=?payload, error=%e, "There was an error while handling the message.");
         }
     }
 }
