@@ -47,7 +47,7 @@ CREATE TABLE plant_telemetry (
     plant_id INT NOT NULL REFERENCES plant(id),
     sensor_id INT NOT NULL REFERENCES sensor(id),
     adc INT NOT NULL,
-    moisture_perc SMALLINT NOT NULL,
+    moisture_perc DOUBLE PRECISION NOT NULL,
     recorded_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 

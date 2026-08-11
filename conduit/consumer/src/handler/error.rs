@@ -11,9 +11,13 @@ pub enum HandlerError {
     #[error("No plant bound to sensor. Register the plant.")]
     PlantNotRegistered,
     #[error(
-        "The received adc value is not between the dry and wet adc values of the sensor. Perhaps recalibrate the sensor."
+        "The received adc value is not between the dry and wet adc values of the sensor. Recalibrate the sensor."
     )]
     AdcNotInRange,
+    #[error(
+        "The dry adc value can not be less than or equal to the wet adc value. Recalibrate the sensor."
+    )]
+    InvalidSensorCalibration,
 }
 
 impl HandlerError {

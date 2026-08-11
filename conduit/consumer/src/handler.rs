@@ -4,7 +4,7 @@ mod schema;
 use error::HandlerError;
 use rumqttc::Publish;
 use schema::{Sensor, SensorPayload, SensorRecord};
-use sqlx::PgPool;
+use sqlx::{PgPool, postgres::PgQueryResult};
 
 fn parse_payload(payload: &[u8]) -> Result<SensorPayload, serde_json::Error> {
     serde_json::from_slice(payload)
@@ -25,10 +25,34 @@ async fn get_sensor_record(
             topic = $1
         AND
             sensor.archived_at IS NULL
-    "#,
+        "#,
         topic
     )
     .fetch_optional(pool)
+    .await
+}
+
+async fn insert_reading(
+    sensor: &Sensor,
+    payload: &SensorPayload,
+    pool: &PgPool,
+) -> Result<PgQueryResult, sqlx::Error> {
+    sqlx::query!(
+        r#"
+        INSERT INTO
+            plant_telemetry
+            (plant_id, sensor_id, adc, moisture_perc, recorded_at)
+        VALUES
+            ($1, $2, $3, $4, $5)
+        ON CONFLICT (sensor_id, recorded_at) DO NOTHING
+        "#,
+        sensor.plant_id,
+        sensor.id,
+        payload.adc,
+        sensor.calculate_moisture_perc(payload.adc),
+        payload.timestamp
+    )
+    .execute(pool)
     .await
 }
 
@@ -43,6 +67,7 @@ async fn try_handle_message(
         .ok_or(HandlerError::SensorNotRegistered)?;
     let sensor = Sensor::try_from(&sensor_record)?;
     sensor.check_adc(payload.adc)?;
+    insert_reading(&sensor, &payload, pool).await?;
     Ok(())
 }
 
