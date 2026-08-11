@@ -3,16 +3,19 @@ mod schema;
 
 use error::HandlerError;
 use rumqttc::Publish;
-use schema::{Sensor, SensorPayload};
+use schema::{Sensor, SensorPayload, SensorRecord};
 use sqlx::PgPool;
 
 fn parse_payload(payload: &[u8]) -> Result<SensorPayload, serde_json::Error> {
     serde_json::from_slice(payload)
 }
 
-async fn get_sensor_record(topic: &str, pool: &PgPool) -> Result<Option<Sensor>, sqlx::Error> {
+async fn get_sensor_record(
+    topic: &str,
+    pool: &PgPool,
+) -> Result<Option<SensorRecord>, sqlx::Error> {
     sqlx::query_as!(
-        Sensor,
+        SensorRecord,
         r#"
         SELECT
             id, plant_id, dry_adc, wet_adc
@@ -34,10 +37,12 @@ async fn try_handle_message(
     payload: &[u8],
     pool: &PgPool,
 ) -> Result<(), HandlerError> {
-    let _ = parse_payload(payload)?;
-    let _ = get_sensor_record(topic, pool)
+    let payload = parse_payload(payload)?;
+    let sensor_record = get_sensor_record(topic, pool)
         .await?
         .ok_or(HandlerError::SensorNotRegistered)?;
+    let sensor = Sensor::try_from(&sensor_record)?;
+    sensor.check_adc(payload.adc)?;
     Ok(())
 }
 

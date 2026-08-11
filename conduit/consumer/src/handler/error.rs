@@ -8,6 +8,12 @@ pub enum HandlerError {
     QueryError(#[from] sqlx::Error),
     #[error("Topic from message was not found. Register the sensor that is bound to the topic.")]
     SensorNotRegistered,
+    #[error("No plant bound to sensor. Register the plant.")]
+    PlantNotRegistered,
+    #[error(
+        "The received adc value is not between the dry and wet adc values of the sensor. Perhaps recalibrate the sensor."
+    )]
+    AdcNotInRange,
 }
 
 impl HandlerError {
