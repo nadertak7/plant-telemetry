@@ -1,5 +1,7 @@
+mod error;
 mod handler;
 mod mqtt;
+mod schema;
 
 use rumqttc::{Event, Packet};
 use shared::db;

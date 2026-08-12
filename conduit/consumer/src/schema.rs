@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 
-use crate::handler::error::HandlerError;
+use crate::error::HandlerError;
 
 #[derive(Deserialize, Debug)]
 pub struct SensorPayload {
