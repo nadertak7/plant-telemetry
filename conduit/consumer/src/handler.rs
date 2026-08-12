@@ -1,9 +1,6 @@
-mod error;
-mod schema;
-
-use error::HandlerError;
+use crate::error::HandlerError;
+use crate::schema::{Sensor, SensorPayload, SensorRecord};
 use rumqttc::Publish;
-use schema::{Sensor, SensorPayload, SensorRecord};
 use sqlx::{PgPool, postgres::PgQueryResult};
 
 fn parse_payload(payload: &[u8]) -> Result<SensorPayload, serde_json::Error> {
