@@ -43,6 +43,13 @@ jobs:
       - run: cargo install --force cargo-audit
       - run: cargo audit
 
+  machete:
+    name: Machete
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: bnjbvr/cargo-machete@main
+
   test:
     name: Tests
     runs-on: ubuntu-latest
