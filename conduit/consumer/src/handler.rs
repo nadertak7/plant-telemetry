@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 use crate::error::HandlerError;
 use crate::schema::{Sensor, SensorPayload, SensorRecord};
 use rumqttc::Publish;
@@ -22,6 +25,17 @@ async fn get_sensor_record(
             topic = $1
         AND
             sensor.archived_at IS NULL
+        AND
+            EXISTS (
+                SELECT
+                    1
+                FROM
+                    plant
+                WHERE
+                    plant.id = sensor.plant_id
+                AND
+                    plant.archived_at IS NULL
+            ) 
         "#,
         topic
     )

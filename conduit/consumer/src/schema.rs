@@ -1,9 +1,9 @@
 use chrono::{DateTime, Utc};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::error::HandlerError;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct SensorPayload {
     pub adc: i32,
     #[serde(with = "chrono::serde::ts_seconds")]
