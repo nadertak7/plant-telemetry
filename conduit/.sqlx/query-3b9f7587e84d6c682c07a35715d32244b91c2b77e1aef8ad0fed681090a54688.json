@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT\n            id, plant_id, dry_adc, wet_adc\n        FROM\n            sensor\n        WHERE\n            topic = $1\n        AND\n            sensor.archived_at IS NULL\n        ",
+  "query": "\n        SELECT\n            id, plant_id, dry_adc, wet_adc\n        FROM\n            sensor\n        WHERE\n            topic = $1\n        AND\n            sensor.archived_at IS NULL\n        AND\n            EXISTS (\n                SELECT\n                    1\n                FROM\n                    plant\n                WHERE\n                    plant.id = sensor.plant_id\n                AND\n                    plant.archived_at IS NULL\n            ) \n        ",
   "describe": {
     "columns": [
       {
@@ -60,5 +60,5 @@
       false
     ]
   },
-  "hash": "6b442078ae4301eb1f5574b4f9f31c9c6bcf8ebc05f6f9b01d68468b41ec6767"
+  "hash": "3b9f7587e84d6c682c07a35715d32244b91c2b77e1aef8ad0fed681090a54688"
 }

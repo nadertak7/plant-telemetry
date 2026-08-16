@@ -1,0 +1,50 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT\n                    adc,\n                    moisture_perc,\n                    recorded_at\n                FROM\n                    plant_telemetry\n                ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "adc",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "plant_telemetry",
+            "name": "adc"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "moisture_perc",
+        "type_info": "Float8",
+        "origin": {
+          "Table": {
+            "table": "plant_telemetry",
+            "name": "moisture_perc"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "recorded_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "plant_telemetry",
+            "name": "recorded_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "ecbd11fae6ae7a933295d915983806fb40f9c71996958e4a72e2b6e71f6e74bc"
+}
