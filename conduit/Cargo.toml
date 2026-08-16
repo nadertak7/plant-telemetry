@@ -7,10 +7,8 @@ members = ["consumer", "shared"]
 chrono = { version = "~0.4.45", features = ["serde"] }
 anyhow = "1.0.103"
 dotenvy = { version = "~0.15.7" }
-env_logger = "~0.11.11"
-log = "~0.4.33"
 rstest = "0.26.1"
-rumqttc = "~0.25.1"
+rumqttc = { version = "~0.25.1", default-features = false }
 serde = { version = "~1.0", features = ["derive"] }
 serde_json = "1.0.151"
 sqlx = { version = "~0.9", features = [

@@ -26,9 +26,6 @@ pub enum HandlerError {
 
 impl HandlerError {
     pub fn is_operational(&self) -> bool {
-        match self {
-            Self::QueryError(_) => true,
-            _ => false,
-        }
+        matches!(self, Self::QueryError(_))
     }
 }
