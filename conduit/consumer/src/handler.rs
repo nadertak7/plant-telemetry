@@ -18,24 +18,23 @@ async fn get_sensor_record(
         SensorRecord,
         r#"
         SELECT
-            id, plant_id, dry_adc, wet_adc
+            sensor.id,
+            sensor.plant_id,
+            sensor.dry_adc,
+            sensor.wet_adc,
+            sensor.archived_at IS NOT NULL "is_sensor_archived!",
+            plant.archived_at IS NOT NULL "is_plant_archived!"
         FROM
             sensor
+        LEFT JOIN
+            plant
+            ON plant.id = sensor.plant_id
         WHERE
             topic = $1
-        AND
-            sensor.archived_at IS NULL
-        AND
-            EXISTS (
-                SELECT
-                    1
-                FROM
-                    plant
-                WHERE
-                    plant.id = sensor.plant_id
-                AND
-                    plant.archived_at IS NULL
-            )
+        ORDER BY
+            sensor.archived_at NULLS FIRST
+        LIMIT
+            1
         "#,
         topic
     )
@@ -87,7 +86,7 @@ pub async fn handle_message(message: &Publish, pool: &PgPool) {
     let topic = &message.topic;
     match try_handle_message(topic, payload, pool).await {
         Ok(()) => tracing::info!(topic=topic, payload=?payload, "Successfully handled message."),
-        Err(e) if e.is_transient() => {
+        Err(e) if !e.is_operational() => {
             tracing::warn!(topic=topic, payload=?payload, error=%e, "Ignoring unprocessable message.");
         }
         Err(e) => {

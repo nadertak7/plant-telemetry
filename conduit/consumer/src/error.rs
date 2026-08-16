@@ -8,8 +8,12 @@ pub enum HandlerError {
     QueryError(#[from] sqlx::Error),
     #[error("Topic from message was not found. Register the sensor that is bound to the topic.")]
     SensorNotRegistered,
+    #[error("Sensor is archived. Restore the sensor.")]
+    SensorArchived,
     #[error("No plant bound to sensor. Register the plant.")]
     PlantNotRegistered,
+    #[error("The plant bound to the sensor is archived. Restore the plant.")]
+    PlantArchived,
     #[error(
         "The received adc value is not between the dry and wet adc values of the sensor. Recalibrate the sensor."
     )]
@@ -21,10 +25,10 @@ pub enum HandlerError {
 }
 
 impl HandlerError {
-    pub fn is_transient(&self) -> bool {
+    pub fn is_operational(&self) -> bool {
         match self {
-            Self::QueryError(_) => false,
-            _ => true,
+            Self::QueryError(_) => true,
+            _ => false,
         }
     }
 }

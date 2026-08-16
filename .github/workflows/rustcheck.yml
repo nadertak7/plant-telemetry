@@ -54,7 +54,7 @@ jobs:
     name: Tests
     runs-on: ubuntu-latest
     services:
-      postgres: 
+      postgres:
         image: postgres:17.5
         env:
           POSTGRES_USER: postgres

@@ -12,7 +12,9 @@ enum ExpectedResult {
     },
     PayloadParseError,
     SensorNotRegistered,
+    SensorArchived,
     PlantNotRegistered,
+    PlantArchived,
     AdcNotInRange,
 }
 
@@ -37,17 +39,17 @@ struct ActualTelemetryRecord {
 )]
 #[case::unparseable_data_adc(
     "sensor/1",
-    r#"{"adc": "300", "timestamp1": 1}"#, // adc cannot be a string.
+    r#"{"adc": "300", "timestamp": 1}"#, // adc cannot be a string.
     ExpectedResult::PayloadParseError
 )]
 #[case::unparseable_data_timestamp(
     "sensor/1",
-    r#"{"adc": 300, "timestamp1": "1"}"#, // timestamp cannot be a string.
+    r#"{"adc": 300, "timestamp": "1"}"#, // timestamp cannot be a string.
     ExpectedResult::PayloadParseError
 )]
 #[case::unparseable_message_format(
     "sensor/1",
-    r#"{adc 700, "timestamp1": 1}"#, // Invalid json, no speech marks around adc.
+    r#"{adc 700, "timestamp": 1}"#, // Invalid json, no speech marks around adc.
     ExpectedResult::PayloadParseError
 )]
 #[case::sensor_unregistered(
@@ -58,7 +60,7 @@ struct ActualTelemetryRecord {
 #[case::sensor_archived(
     "sensor/archived", // sensor/archived has an archived_at date.
     r#"{"adc": 300, "timestamp": 1}"#,
-    ExpectedResult::SensorNotRegistered
+    ExpectedResult::SensorArchived
 )]
 #[case::plant_unregistered(
     "sensor/plant_unregistered", // sensor/plant_unregistered has a plant id of NULL.
@@ -68,7 +70,7 @@ struct ActualTelemetryRecord {
 #[case::plant_archived(
     "sensor/plant_archived", // the plant linked to sensor/plant_archived has an archived_at date.
     r#"{"adc": 300, "timestamp": 1}"#,
-    ExpectedResult::PlantNotRegistered
+    ExpectedResult::PlantArchived
 )]
 #[case::adc_out_of_bounds_lower(
     "sensor/1",
@@ -129,10 +131,22 @@ async fn test_try_handle_message(
                 "Expected SensorNotRegistered, got {result:?}."
             )
         }
+        ExpectedResult::SensorArchived => {
+            assert!(
+                matches!(result, Err(HandlerError::SensorArchived)),
+                "Expected SensorArchived, got {result:?}."
+            )
+        }
         ExpectedResult::PlantNotRegistered => {
             assert!(
                 matches!(result, Err(HandlerError::PlantNotRegistered)),
                 "Expected PlantNotRegistered got {result:?}."
+            )
+        }
+        ExpectedResult::PlantArchived => {
+            assert!(
+                matches!(result, Err(HandlerError::PlantArchived)),
+                "Expected PlantArchived got {result:?}."
             )
         }
         ExpectedResult::AdcNotInRange => {

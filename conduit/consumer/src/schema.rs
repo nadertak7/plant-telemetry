@@ -16,6 +16,8 @@ pub struct SensorRecord {
     pub plant_id: Option<i32>,
     pub dry_adc: i32,
     pub wet_adc: i32,
+    pub is_sensor_archived: bool,
+    pub is_plant_archived: bool,
 }
 
 pub struct Sensor {
@@ -35,6 +37,14 @@ impl TryFrom<&SensorRecord> for Sensor {
 
         if sensor_row.dry_adc <= sensor_row.wet_adc {
             return Err(HandlerError::InvalidSensorCalibration);
+        }
+
+        if sensor_row.is_sensor_archived {
+            return Err(HandlerError::SensorArchived);
+        }
+
+        if sensor_row.is_plant_archived {
+            return Err(HandlerError::PlantArchived);
         }
 
         Ok(Self {
