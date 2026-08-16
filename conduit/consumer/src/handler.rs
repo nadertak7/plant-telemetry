@@ -35,7 +35,7 @@ async fn get_sensor_record(
                     plant.id = sensor.plant_id
                 AND
                     plant.archived_at IS NULL
-            ) 
+            )
         "#,
         topic
     )
