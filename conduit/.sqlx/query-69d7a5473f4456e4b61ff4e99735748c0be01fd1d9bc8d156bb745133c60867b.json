@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE\n            sensor\n        SET\n            last_active_at = NOW()\n        WHERE\n            sensor.id = $1\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "69d7a5473f4456e4b61ff4e99735748c0be01fd1d9bc8d156bb745133c60867b"
+}

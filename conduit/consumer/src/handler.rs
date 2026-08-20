@@ -4,7 +4,8 @@ mod tests;
 use crate::error::HandlerError;
 use crate::schema::{Sensor, SensorPayload, SensorRecord};
 use rumqttc::Publish;
-use sqlx::{PgPool, postgres::PgQueryResult};
+use sqlx::postgres::PgQueryResult;
+use sqlx::{PgConnection, PgPool};
 
 fn parse_payload(payload: &[u8]) -> Result<SensorPayload, serde_json::Error> {
     serde_json::from_slice(payload)
@@ -42,10 +43,10 @@ async fn get_sensor_record(
     .await
 }
 
-async fn insert_reading(
+async fn insert_telemetry_reading(
     sensor: &Sensor,
     payload: &SensorPayload,
-    pool: &PgPool,
+    transaction: &mut PgConnection,
 ) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(
         r#"
@@ -62,7 +63,26 @@ async fn insert_reading(
         sensor.calculate_moisture_perc(payload.adc),
         payload.timestamp
     )
-    .execute(pool)
+    .execute(&mut *transaction)
+    .await
+}
+
+async fn update_sensor_last_active_at(
+    sensor: &Sensor,
+    transaction: &mut PgConnection,
+) -> Result<PgQueryResult, sqlx::Error> {
+    sqlx::query!(
+        r#"
+        UPDATE
+            sensor
+        SET
+            last_active_at = NOW()
+        WHERE
+            sensor.id = $1
+        "#,
+        sensor.id,
+    )
+    .execute(&mut *transaction)
     .await
 }
 
@@ -77,7 +97,10 @@ async fn try_handle_message(
         .ok_or(HandlerError::SensorNotRegistered)?;
     let sensor = Sensor::try_from(&sensor_record)?;
     sensor.check_adc(payload.adc)?;
-    insert_reading(&sensor, &payload, pool).await?;
+    let mut transaction = pool.begin().await?;
+    insert_telemetry_reading(&sensor, &payload, &mut transaction).await?;
+    update_sensor_last_active_at(&sensor, &mut transaction).await?;
+    transaction.commit().await?;
     Ok(())
 }
 

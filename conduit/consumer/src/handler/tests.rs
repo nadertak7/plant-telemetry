@@ -22,6 +22,7 @@ struct ActualTelemetryRecord {
     adc: i32,
     moisture_perc: f64,
     recorded_at: DateTime<Utc>,
+    last_active_at: Option<DateTime<Utc>>,
 }
 
 #[rstest]
@@ -34,7 +35,7 @@ struct ActualTelemetryRecord {
 )]
 #[case::unparseable_message_key_timestamp(
     "sensor/1",
-    r#"{"adc": 300, "timestamp1": 1}"#, // timestamp1 is not an expected key. 
+    r#"{"adc": 300, "timestamp1": 1}"#, // timestamp1 is not an expected key.
     ExpectedResult::PayloadParseError
 )]
 #[case::unparseable_data_adc(
@@ -104,12 +105,19 @@ async fn test_try_handle_message(
                 ActualTelemetryRecord,
                 r#"
                 SELECT
-                    adc,
-                    moisture_perc,
-                    recorded_at
+                    plant_telemetry.adc,
+                    plant_telemetry.moisture_perc,
+                    plant_telemetry.recorded_at,
+                    sensor.last_active_at
                 FROM
                     plant_telemetry
+                INNER JOIN
+                    sensor
+                    ON plant_telemetry.sensor_id = sensor.id
+                WHERE
+                    sensor.topic = $1
                 "#,
+                topic
             )
             .fetch_optional(&pool)
             .await
@@ -118,6 +126,7 @@ async fn test_try_handle_message(
             assert_eq!(expected_adc, record.adc);
             assert_eq!(expected_moisture_perc, record.moisture_perc);
             assert_eq!(expected_recorded_at, record.recorded_at.timestamp());
+            assert!(record.last_active_at.is_some());
         }
         ExpectedResult::PayloadParseError => {
             assert!(
