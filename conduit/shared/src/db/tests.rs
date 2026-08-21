@@ -1,6 +1,6 @@
 use crate::db::MIGRATOR;
 use rstest::rstest;
-use sqlx::PgPool;
+use sqlx::{PgPool, postgres::PgQueryResult};
 
 enum ExpectedResult {
     Success,
@@ -106,9 +106,51 @@ async fn test_dry_adc_must_be_greater_than_wet_adc(
                 .expect("Expected a database error, got a different error.");
             assert!(
                 database_error.is_check_violation(),
-                "Expected a check violation, got {database_error}."
+                "Expected a check violation, got a different error."
             );
             assert_eq!(database_error.constraint(), Some(constraint));
         }
     }
+}
+
+#[sqlx::test(migrator = "MIGRATOR")]
+async fn test_sensor_and_topic_unique_constraint(pool: PgPool) {
+    let result = sqlx::query!(
+        r#"
+        INSERT INTO
+            sensor
+            (id, topic, plant_id, dry_adc, wet_adc, archived_at)
+        VALUES
+            (1, 'sensor_1', NULL, 500, 300, NULL),
+            (2, 'sensor_1', NULL, 500, 300, '1970-01-01')
+        "#
+    )
+    .execute(&pool)
+    .await;
+
+    let query_result: PgQueryResult =
+        result.expect("An active and archived sensor with the same topic should coexist.");
+    assert_eq!(query_result.rows_affected(), 2);
+
+    let result = sqlx::query!(
+        r#"
+        INSERT INTO
+            sensor
+            (id, topic, plant_id, dry_adc, wet_adc, archived_at)
+        VALUES
+            (3, 'sensor_1', NULL, 500, 300, NULL)
+        "#
+    )
+    .execute(&pool)
+    .await;
+
+    let error = result.expect_err("Two active sensors with the same topic cannot coexist.");
+    let database_error = error
+        .as_database_error()
+        .expect("Expected database error, got a different error.");
+    assert!(
+        database_error.is_unique_violation(),
+        "Expected a unique violation, got a different error."
+    );
+    assert_eq!(database_error.constraint(), Some("ux_sensor_topic"));
 }
