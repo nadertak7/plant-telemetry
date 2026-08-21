@@ -1,6 +1,6 @@
 use crate::db::MIGRATOR;
 use rstest::rstest;
-use sqlx::{Error, PgPool, error::ErrorKind, postgres::PgQueryResult};
+use sqlx::{Error, PgPool, error::ErrorKind, postgres::PgQueryResult, query};
 
 enum ExpectedResult {
     Success,
@@ -154,4 +154,30 @@ async fn test_sensor_and_topic_unique_constraint(pool: PgPool) {
     .await;
 
     validate_database_error(result, ErrorKind::UniqueViolation, "ux_sensor_topic");
+}
+
+#[sqlx::test(migrator = "MIGRATOR")]
+async fn test_plant_display_name_unique_constriant(pool: PgPool) {
+    let result = sqlx::query!(r#"
+        INSERT INTO
+            plant
+            (id, display_name, lower_threshold_perc, warning_threshold_perc, upper_threshold_perc, archived_at)
+        VALUES
+            (1, 'plant', 30, 40, 50, NULL),
+            (2, 'plant', 30, 40, 50, '1970-01-01')
+        "#).execute(&pool).await;
+
+    let query_result =
+        result.expect("An active and archived sensor with the same topic should coexist.");
+    assert_eq!(query_result.rows_affected(), 2);
+
+    let result = sqlx::query(r#"
+        INSERT INTO
+            plant
+            (id, display_name, lower_threshold_perc, warning_threshold_perc, upper_threshold_perc, archived_at)
+        VALUES
+            (3, 'plant', 30, 40, 50, NULL)
+        "#).execute(&pool).await;
+
+    validate_database_error(result, ErrorKind::UniqueViolation, "ux_plant_display_name");
 }
