@@ -1,6 +1,6 @@
 use crate::db::MIGRATOR;
 use rstest::rstest;
-use sqlx::{Error, PgPool, error::ErrorKind, postgres::PgQueryResult, query};
+use sqlx::{Error, PgPool, error::ErrorKind, postgres::PgQueryResult};
 
 enum ExpectedResult {
     Success,
@@ -180,4 +180,26 @@ async fn test_plant_display_name_unique_constriant(pool: PgPool) {
         "#).execute(&pool).await;
 
     validate_database_error(result, ErrorKind::UniqueViolation, "ux_plant_display_name");
+}
+
+#[sqlx::test(migrator = "MIGRATOR", fixtures("plant", "sensor"))]
+async fn test_plant_telemetry_sensor_recorded_unique_constriant(pool: PgPool) {
+    let result = sqlx::query!(
+        r#"
+        INSERT INTO
+            plant_telemetry
+            (id, plant_id, sensor_id, adc, moisture_perc, recorded_at)
+        VALUES
+            (1, 1, 1, 400, 50, '1970-01-01'),
+            (2, 1, 1, 400, 50, '1970-01-01')
+        "#
+    )
+    .execute(&pool)
+    .await;
+
+    validate_database_error(
+        result,
+        ErrorKind::UniqueViolation,
+        "ux_plant_telemetry_sensor_id_recorded_at",
+    );
 }
