@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use rstest::rstest;
+use shared::db::MIGRATOR;
 
 use super::*;
 
@@ -83,7 +84,7 @@ struct ActualTelemetryRecord {
     r#"{"adc": 1001, "timestamp": 1}"#, // adc cannot be higher the sensor's dry adc (1000).
     ExpectedResult::AdcNotInRange
 )]
-#[sqlx::test(migrations = "../migrations", fixtures("plant", "sensor"))]
+#[sqlx::test(migrator = "MIGRATOR", fixtures("plant", "sensor"))]
 async fn test_try_handle_message(
     #[case] topic: &str,
     #[case] payload: &str,

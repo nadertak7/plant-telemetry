@@ -1,5 +1,7 @@
+use crate::db::MIGRATOR;
 use rstest::rstest;
 use sqlx::PgPool;
+
 enum ExpectedResult {
     Success,
     ConstraintFailure { constraint: &'static str },
@@ -17,8 +19,8 @@ enum ExpectedResult {
 // Thresholds in partially incorrect order - warning adc is lower than lower adc.
 #[case::adc_percs_in_incorrect_order_2(40, 30, 50, ExpectedResult::ConstraintFailure { constraint: "ck_plant_lower_warning_upper_threshold_perc"})]
 // All thresholds must be unique.
-#[case::adc_percs_in_incorrect_order_2(40, 40, 50, ExpectedResult::ConstraintFailure { constraint: "ck_plant_lower_warning_upper_threshold_perc"})]
-#[sqlx::test(migrations = "../migrations")]
+#[case::adc_percs_must_be_unique(40, 40, 50, ExpectedResult::ConstraintFailure { constraint: "ck_plant_lower_warning_upper_threshold_perc"})]
+#[sqlx::test(migrator = "MIGRATOR")]
 async fn test_ck_plant_lower_warning_upper_threshold_perc(
     #[case] lower_threshold_perc: i16,
     #[case] warning_threshold_perc: i16,

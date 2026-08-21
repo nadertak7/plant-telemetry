@@ -3,6 +3,7 @@ mod tests;
 
 use crate::settings::DatabaseSettings;
 use anyhow::Context;
+use sqlx::migrate::Migrator;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
 
@@ -18,8 +19,10 @@ pub async fn create_connection_pool(
         .context("Failed to connect to database.")
 }
 
+pub static MIGRATOR: Migrator = sqlx::migrate!("../migrations");
+
 pub async fn run_migrations(pool: &Pool<Postgres>) -> anyhow::Result<()> {
-    sqlx::migrate!("../migrations")
+    MIGRATOR
         .run(pool)
         .await
         .context("Failed to run migrations.")
