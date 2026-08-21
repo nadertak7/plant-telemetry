@@ -47,19 +47,19 @@ async fn test_lower_warning_upper_adc_thresholds_must_be_sequential(
 
     match expected_result {
         ExpectedResult::Success => {
-            let row = result.expect("Expected success, got error.");
+            let row = result.expect("Expected success but got an error.");
             assert_eq!(lower_threshold_perc, row.lower_threshold_perc);
             assert_eq!(warning_threshold_perc, row.warning_threshold_perc);
             assert_eq!(upper_threshold_perc, row.upper_threshold_perc);
         }
         ExpectedResult::ConstraintFailure { constraint } => {
-            let error = result.expect_err("Expected error, got success.");
+            let error = result.expect_err("Expected error but insert query succeeded.");
             let database_error = error
                 .as_database_error()
-                .expect("Expected a database error, got a different error.");
+                .expect("Expected a database error, got a different error: {database_error}.");
             assert!(
                 database_error.is_check_violation(),
-                "Expected a check violation, got {database_error}."
+                "Expected a check violation, got a different error: {database_error}."
             );
             assert_eq!(database_error.constraint(), Some(constraint));
         }
@@ -95,18 +95,18 @@ async fn test_dry_adc_must_be_greater_than_wet_adc(
 
     match expected_result {
         ExpectedResult::Success => {
-            let row = result.expect("Expected success, got error.");
+            let row = result.expect("Expected success but got an error.");
             assert_eq!(dry_adc, row.dry_adc);
             assert_eq!(wet_adc, row.wet_adc);
         }
         ExpectedResult::ConstraintFailure { constraint } => {
-            let error = result.expect_err("Expected error, got success.");
+            let error = result.expect_err("Expected an error but insert query succeeded.");
             let database_error = error
                 .as_database_error()
-                .expect("Expected a database error, got a different error.");
+                .expect("Expected a database error, got a different error: {database_error}");
             assert!(
                 database_error.is_check_violation(),
-                "Expected a check violation, got a different error."
+                "Expected a check violation, got a different error: {database_error}."
             );
             assert_eq!(database_error.constraint(), Some(constraint));
         }
@@ -147,10 +147,10 @@ async fn test_sensor_and_topic_unique_constraint(pool: PgPool) {
     let error = result.expect_err("Two active sensors with the same topic cannot coexist.");
     let database_error = error
         .as_database_error()
-        .expect("Expected database error, got a different error.");
+        .expect("Expected database error, got a different error: {database_error}.");
     assert!(
         database_error.is_unique_violation(),
-        "Expected a unique violation, got a different error."
+        "Expected a unique violation, got a different error: {database_error}."
     );
     assert_eq!(database_error.constraint(), Some("ux_sensor_topic"));
 }
