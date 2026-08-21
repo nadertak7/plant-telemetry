@@ -21,7 +21,7 @@ enum ExpectedResult {
 // All thresholds must be unique.
 #[case::adc_percs_must_be_unique(40, 40, 50, ExpectedResult::ConstraintFailure { constraint: "ck_plant_lower_warning_upper_threshold_perc"})]
 #[sqlx::test(migrator = "MIGRATOR")]
-async fn test_ck_plant_lower_warning_upper_threshold_perc(
+async fn test_lower_warning_upper_adc_thresholds_must_be_sequential(
     #[case] lower_threshold_perc: i16,
     #[case] warning_threshold_perc: i16,
     #[case] upper_threshold_perc: i16,
@@ -53,7 +53,54 @@ async fn test_ck_plant_lower_warning_upper_threshold_perc(
             assert_eq!(upper_threshold_perc, row.upper_threshold_perc);
         }
         ExpectedResult::ConstraintFailure { constraint } => {
-            let error = result.expect_err("Expected failure, got success");
+            let error = result.expect_err("Expected error, got success.");
+            let database_error = error
+                .as_database_error()
+                .expect("Expected a database error, got a different error.");
+            assert!(
+                database_error.is_check_violation(),
+                "Expected a check violation, got {database_error}."
+            );
+            assert_eq!(database_error.constraint(), Some(constraint));
+        }
+    }
+}
+
+#[rstest]
+#[case::happy_path(500, 300, ExpectedResult::Success)]
+#[case::wet_adc_greater_than_dry_adc(300, 500, ExpectedResult::ConstraintFailure { constraint: "ck_sensor_dry_adc_wet_adc" })]
+#[case::wet_adc_equal_to_dry_adc(300, 300, ExpectedResult::ConstraintFailure { constraint: "ck_sensor_dry_adc_wet_adc" })]
+#[sqlx::test(migrator = "MIGRATOR")]
+async fn test_dry_adc_must_be_greater_than_wet_adc(
+    #[case] dry_adc: i32,
+    #[case] wet_adc: i32,
+    #[case] expected_result: ExpectedResult,
+    #[ignore] pool: PgPool,
+) {
+    let result = sqlx::query!(
+        r#"
+        INSERT INTO
+            sensor
+            (id, topic, plant_id, dry_adc, wet_adc)
+        VALUES
+            (1, 'sensor/1', NULL, $1, $2)
+        RETURNING
+            dry_adc, wet_adc
+    "#,
+        dry_adc,
+        wet_adc
+    )
+    .fetch_one(&pool)
+    .await;
+
+    match expected_result {
+        ExpectedResult::Success => {
+            let row = result.expect("Expected success, got error.");
+            assert_eq!(dry_adc, row.dry_adc);
+            assert_eq!(wet_adc, row.wet_adc);
+        }
+        ExpectedResult::ConstraintFailure { constraint } => {
+            let error = result.expect_err("Expected error, got success.");
             let database_error = error
                 .as_database_error()
                 .expect("Expected a database error, got a different error.");
