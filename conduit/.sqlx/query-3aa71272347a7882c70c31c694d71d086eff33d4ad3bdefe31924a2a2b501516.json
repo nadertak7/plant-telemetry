@@ -1,0 +1,41 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO\n            sensor\n            (id, topic, plant_id, dry_adc, wet_adc)\n        VALUES\n            (1, 'sensor/1', NULL, $1, $2)\n        RETURNING\n            dry_adc, wet_adc\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "dry_adc",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "sensor",
+            "name": "dry_adc"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "wet_adc",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "sensor",
+            "name": "wet_adc"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "3aa71272347a7882c70c31c694d71d086eff33d4ad3bdefe31924a2a2b501516"
+}

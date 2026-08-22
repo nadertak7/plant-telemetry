@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO\n            plant_telemetry\n            (id, plant_id, sensor_id, adc, moisture_perc, recorded_at)\n        VALUES\n            (1, 1, 1, 400, $1, '1970-01-01')\n        RETURNING\n            moisture_perc\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "moisture_perc",
+        "type_info": "Float8",
+        "origin": {
+          "Table": {
+            "table": "plant_telemetry",
+            "name": "moisture_perc"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Float8"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "f7317d4f93ddc4c5a1cb4973d05395a43d47d25537bfdaa465589d12e498272c"
+}

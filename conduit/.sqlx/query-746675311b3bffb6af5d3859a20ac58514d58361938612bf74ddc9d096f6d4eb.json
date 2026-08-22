@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT\n                    plant_telemetry.adc,\n                    plant_telemetry.moisture_perc,\n                    plant_telemetry.recorded_at,\n                    sensor.last_active_at\n                FROM\n                    plant_telemetry\n                INNER JOIN\n                    sensor\n                    ON plant_telemetry.sensor_id = sensor.id\n                WHERE\n                    sensor.topic = $1\n                ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "adc",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "plant_telemetry",
+            "name": "adc"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "moisture_perc",
+        "type_info": "Float8",
+        "origin": {
+          "Table": {
+            "table": "plant_telemetry",
+            "name": "moisture_perc"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "recorded_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "plant_telemetry",
+            "name": "recorded_at"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "last_active_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "sensor",
+            "name": "last_active_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "746675311b3bffb6af5d3859a20ac58514d58361938612bf74ddc9d096f6d4eb"
+}
