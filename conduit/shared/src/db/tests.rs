@@ -15,7 +15,7 @@ fn validate_database_error<T: std::fmt::Debug>(
     let error = result.expect_err("Expected error but insert query succeeded.");
     let database_error = error
         .as_database_error()
-        .expect("Expected a database error, got a different error: {database_error}.");
+        .expect("Expected a database error, got a different error.");
     let actual_error_kind = database_error.kind();
     assert_eq!(
         actual_error_kind, expected_error_kind,
@@ -123,7 +123,7 @@ async fn test_dry_adc_must_be_greater_than_wet_adc(
 }
 
 #[sqlx::test(migrator = "MIGRATOR")]
-async fn test_sensor_and_topic_unique_constraint(pool: PgPool) {
+async fn test_active_sensor_topic_must_be_unique(pool: PgPool) {
     let result = sqlx::query!(
         r#"
         INSERT INTO
@@ -157,7 +157,7 @@ async fn test_sensor_and_topic_unique_constraint(pool: PgPool) {
 }
 
 #[sqlx::test(migrator = "MIGRATOR")]
-async fn test_plant_display_name_unique_constriant(pool: PgPool) {
+async fn test_active_plant_display_name_must_be_unique(pool: PgPool) {
     let result = sqlx::query!(r#"
         INSERT INTO
             plant
@@ -168,7 +168,7 @@ async fn test_plant_display_name_unique_constriant(pool: PgPool) {
         "#).execute(&pool).await;
 
     let query_result =
-        result.expect("An active and archived sensor with the same topic should coexist.");
+        result.expect("An active and archived plant with the same display name should coexist.");
     assert_eq!(query_result.rows_affected(), 2);
 
     let result = sqlx::query(r#"
@@ -183,7 +183,7 @@ async fn test_plant_display_name_unique_constriant(pool: PgPool) {
 }
 
 #[sqlx::test(migrator = "MIGRATOR", fixtures("plant", "sensor"))]
-async fn test_plant_telemetry_sensor_recorded_unique_constriant(pool: PgPool) {
+async fn test_plant_telemetry_sensor_recorded_at_must_be_unique(pool: PgPool) {
     let result = sqlx::query!(
         r#"
         INSERT INTO
@@ -202,4 +202,44 @@ async fn test_plant_telemetry_sensor_recorded_unique_constriant(pool: PgPool) {
         ErrorKind::UniqueViolation,
         "ux_plant_telemetry_sensor_id_recorded_at",
     );
+}
+
+#[rstest]
+#[case::happy_path(50.0, ExpectedResult::Success)]
+#[case::moisture_perc_less_than_lower_bound(-1.0, ExpectedResult::ConstraintFailure)]
+#[case::moisture_perc_higher_than_upper_bound(101.0, ExpectedResult::ConstraintFailure)]
+#[sqlx::test(migrator = "MIGRATOR", fixtures("plant", "sensor"))]
+async fn test_telemetry_moisture_perc_must_be_in_bounds(
+    #[case] moisture_perc: f64,
+    #[case] expected_result: ExpectedResult,
+    #[ignore] pool: PgPool,
+) {
+    let result = sqlx::query!(
+        r#"
+        INSERT INTO
+            plant_telemetry
+            (id, plant_id, sensor_id, adc, moisture_perc, recorded_at)
+        VALUES
+            (1, 1, 1, 400, $1, '1970-01-01')
+        RETURNING
+            moisture_perc
+        "#,
+        moisture_perc
+    )
+    .fetch_one(&pool)
+    .await;
+
+    match expected_result {
+        ExpectedResult::Success => {
+            let row = result.expect("Expected success but got an error.");
+            assert_eq!(moisture_perc, row.moisture_perc);
+        }
+        ExpectedResult::ConstraintFailure => {
+            validate_database_error(
+                result,
+                ErrorKind::CheckViolation,
+                "ck_plant_telemetry_moisture_perc",
+            );
+        }
+    }
 }
