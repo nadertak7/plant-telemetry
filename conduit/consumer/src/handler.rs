@@ -2,12 +2,13 @@
 mod tests;
 
 use crate::error::HandlerError;
-use crate::schema::{Sensor, SensorPayload, SensorRecord};
+use crate::schema::message::SensorMessage;
+use crate::schema::sensor::{Sensor, SensorRecord};
 use rumqttc::Publish;
 use sqlx::postgres::PgQueryResult;
 use sqlx::{PgConnection, PgPool};
 
-fn parse_payload(payload: &[u8]) -> Result<SensorPayload, serde_json::Error> {
+fn parse_payload(payload: &[u8]) -> Result<SensorMessage, serde_json::Error> {
     serde_json::from_slice(payload)
 }
 
@@ -45,7 +46,7 @@ async fn get_sensor_record(
 
 async fn insert_telemetry_reading(
     sensor: &Sensor,
-    payload: &SensorPayload,
+    payload: &SensorMessage,
     transaction: &mut PgConnection,
 ) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(
