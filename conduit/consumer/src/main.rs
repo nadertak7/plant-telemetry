@@ -17,15 +17,16 @@ async fn main() -> anyhow::Result<()> {
     let pool = db::create_connection_pool(&settings.database_settings).await?;
     db::run_migrations(&pool).await?;
     let (mqtt_client, mut event_loop) = mqtt::get_client(&settings.mqtt_settings);
-    mqtt::subscribe(&mqtt_client, &settings.mqtt_settings).await?;
 
-    tracing::info!("Starting poll.");
     loop {
         match event_loop.poll().await {
             Ok(Event::Incoming(Packet::Publish(message))) => {
                 // Spawn task per message to not block mqtt event loop.
                 let pool_cloned = pool.clone();
                 tokio::spawn(async move { handler::handle_message(&message, &pool_cloned).await });
+            }
+            Ok(Event::Incoming(Packet::ConnAck(_))) => {
+                mqtt::subscribe(&mqtt_client, &settings.mqtt_settings).await?;
             }
             Ok(_) => {}
             Err(e) => {
