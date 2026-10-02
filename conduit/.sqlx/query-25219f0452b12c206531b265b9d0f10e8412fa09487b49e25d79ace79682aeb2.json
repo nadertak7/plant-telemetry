@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO\n            plant\n            (id, display_name, lower_threshold_perc, warning_threshold_perc, upper_threshold_perc, archived_at)\n        VALUES\n            (1, 'plant', 30, 40, 50, NULL),\n            (2, 'plant', 30, 40, 50, '1970-01-01')\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "25219f0452b12c206531b265b9d0f10e8412fa09487b49e25d79ace79682aeb2"
+}

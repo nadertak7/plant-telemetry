@@ -1,0 +1,54 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO\n            plant\n            (id, display_name, lower_threshold_perc, warning_threshold_perc, upper_threshold_perc)\n        VALUES\n            (1, 'Plant', $1, $2, $3)\n        RETURNING\n            lower_threshold_perc, warning_threshold_perc, upper_threshold_perc\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "lower_threshold_perc",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "plant",
+            "name": "lower_threshold_perc"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "warning_threshold_perc",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "plant",
+            "name": "warning_threshold_perc"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "upper_threshold_perc",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "plant",
+            "name": "upper_threshold_perc"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int2",
+        "Int2",
+        "Int2"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "16ae0e78b0e1e5b79f078d1a11c7a31a68bc5758f84b9aaf5ef76ae6e3bfd12c"
+}

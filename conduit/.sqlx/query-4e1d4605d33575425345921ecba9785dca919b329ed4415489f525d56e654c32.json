@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO\n            sensor\n            (id, topic, plant_id, dry_adc, wet_adc, archived_at)\n        VALUES\n            (3, 'sensor_1', NULL, 500, 300, NULL)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "4e1d4605d33575425345921ecba9785dca919b329ed4415489f525d56e654c32"
+}
