@@ -58,6 +58,6 @@ impl Sensor {
         let adc = adc as f64;
         let dry_adc = self.dry_adc as f64;
         let wet_adc = self.wet_adc as f64;
-        100.0 * ((adc - wet_adc) / (dry_adc - wet_adc))
+        100.0 * ((dry_adc - adc) / (dry_adc - wet_adc))
     }
 }

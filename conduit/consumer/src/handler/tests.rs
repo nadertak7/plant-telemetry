@@ -27,8 +27,10 @@ struct ActualTelemetryRecord {
 }
 
 #[rstest]
-#[case::happy_path_1("sensor/1", r#"{"adc": 300, "timestamp": 1}"#, ExpectedResult::Success{ adc: 300, moisture_perc: 30.0, recorded_at: 1 })]
-#[case::happy_path_2("sensor/1", r#"{"adc": 700, "timestamp": 1000}"#, ExpectedResult::Success{ adc: 700, moisture_perc: 70.0, recorded_at: 1000 })]
+#[case::happy_path_1("sensor/1", r#"{"adc": 300, "timestamp": 1}"#, ExpectedResult::Success{ adc: 300, moisture_perc: 70.0, recorded_at: 1 })]
+#[case::happy_path_2("sensor/1", r#"{"adc": 700, "timestamp": 1}"#, ExpectedResult::Success{ adc: 700, moisture_perc: 30.0, recorded_at: 1 })]
+#[case::happy_path_completely_dry("sensor/1", r#"{"adc": 1000, "timestamp": 1}"#, ExpectedResult::Success{ adc: 1000, moisture_perc: 0.0, recorded_at: 1 })]
+#[case::happy_path_completely_wet("sensor/1", r#"{"adc": 0, "timestamp": 1}"#, ExpectedResult::Success{ adc: 0, moisture_perc: 100.0, recorded_at: 1 })]
 #[case::unparseable_message_key_adc(
     "sensor/1",
     r#"{"adc1": 300, "timestamp": 1}"#, // adc1 is not an expected key.
