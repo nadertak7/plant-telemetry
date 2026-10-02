@@ -53,7 +53,7 @@ impl Settings {
             },
             mqtt_settings: MqttSettings {
                 id: "conduit-consumer".to_string(),
-                host: "localhost".to_string(),
+                host: env::var("MQTT_HOST").context("Could not find MQTT_HOST in environment.")?,
                 port: 1883,
                 username: env::var("MQTT_USERNAME")
                     .context("Could not find MQTT_USERNAME in environment.")?,

@@ -1,4 +1,0 @@
-# TODO: set these in dockerfile once implemented.
-
-[env]
-RUST_BACKTRACE = "1"

@@ -26,6 +26,22 @@ services:
       - postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
 
+  consumer:
+    container_name: consumer
+    build:
+      context: ./conduit
+      args:
+        PACKAGE_NAME: "consumer"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_SUPER_USERNAME}:${POSTGRES_SUPER_PASSWORD}@database:5432/${POSTGRES_DB}
+      MQTT_HOST: broker
+      MQTT_USERNAME: ${MQTT_USERNAME}
+      MQTT_PASSWORD: ${MQTT_PASSWORD}
+    depends_on:
+      - database
+      - broker
+    restart: unless-stopped
+
 volumes:
   postgres-data:
   mosquitto-data:
