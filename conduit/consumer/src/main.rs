@@ -10,6 +10,7 @@ use shared::settings::Settings;
 use sqlx::{Pool, Postgres};
 use std::time::Duration;
 
+/// Attempt setup steps that can fail, so errors can be propagated to logs in [`main`].
 async fn try_setup() -> anyhow::Result<(Settings, Pool<Postgres>)> {
     let settings = Settings::new()?;
     let pool = db::create_connection_pool(&settings.database_settings).await?;
