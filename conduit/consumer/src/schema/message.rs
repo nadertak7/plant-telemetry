@@ -1,6 +1,9 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+/// The expected message format from a sensor.
+///
+/// Convert the incoming unix timestamp to UTC.
 #[derive(Deserialize, Serialize, Debug)]
 pub struct SensorMessage {
     pub adc: i32,

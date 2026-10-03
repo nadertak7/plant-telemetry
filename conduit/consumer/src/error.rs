@@ -1,5 +1,6 @@
 use thiserror::Error;
 
+/// Detail any errors that can occur while handling a message.
 #[derive(Error, Debug)]
 pub enum HandlerError {
     #[error("Error parsing payload: {0}.")]
@@ -25,6 +26,8 @@ pub enum HandlerError {
 }
 
 impl HandlerError {
+    /// An operational error implies something went wrong with the app while handling a message. A non-operational
+    /// error implies a data issue.
     pub fn is_operational(&self) -> bool {
         matches!(self, Self::QueryError(_))
     }

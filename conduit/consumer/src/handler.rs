@@ -8,10 +8,17 @@ use rumqttc::Publish;
 use sqlx::postgres::PgQueryResult;
 use sqlx::{PgConnection, PgPool};
 
+/// Deserialise the json message payload from bytes into a [`SensorMessage`].
 fn parse_payload(payload: &[u8]) -> Result<SensorMessage, serde_json::Error> {
     serde_json::from_slice(payload)
 }
 
+/// Retrieve a sensor that matches the topic of the message.
+///
+/// Fetch an active sensor if one exists, else fetch an archived sensor.
+/// Due to database constraints, there can never be more than one active sensor per topic.
+///
+/// Also return whether a plant linked to the sensor is archived.
 async fn get_sensor_record(
     topic: &str,
     pool: &PgPool,
@@ -44,6 +51,9 @@ async fn get_sensor_record(
     .await
 }
 
+/// Insert a record into the plant_telemetry table.
+///
+/// To ensure idempotency, messages from the same sensor, with the same timestamp, are ignored.
 async fn insert_telemetry_reading(
     sensor: &Sensor,
     payload: &SensorMessage,
@@ -68,6 +78,7 @@ async fn insert_telemetry_reading(
     .await
 }
 
+/// Update a sensor record's last_active_at when a processable message is received.
 async fn update_sensor_last_active_at(
     sensor: &Sensor,
     transaction: &mut PgConnection,
@@ -87,6 +98,7 @@ async fn update_sensor_last_active_at(
     .await
 }
 
+/// Attempt handling a message so that errors can be propagated to logs in [`handle_message`].
 async fn try_handle_message(
     topic: &str,
     payload: &[u8],
@@ -105,6 +117,7 @@ async fn try_handle_message(
     Ok(())
 }
 
+/// Log if message handling succeeded or failed. Distinguish operational and non-operational errors.
 pub async fn handle_message(message: &Publish, pool: &PgPool) {
     let payload = &message.payload;
     let topic = &message.topic;

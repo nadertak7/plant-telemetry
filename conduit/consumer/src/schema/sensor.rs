@@ -1,5 +1,8 @@
 use crate::error::HandlerError;
 
+/// Sensor data retrieved from the database, including plant archival status.
+///
+/// Convert to [`Sensor`] to validate it before processing readings.
 #[derive(Debug)]
 pub struct SensorRecord {
     pub id: i32,
@@ -10,6 +13,7 @@ pub struct SensorRecord {
     pub is_plant_archived: bool,
 }
 
+/// A validated [`SensorRecord`], containing the data needed for message handling.
 pub struct Sensor {
     pub id: i32,
     pub plant_id: i32,
@@ -20,6 +24,12 @@ pub struct Sensor {
 impl TryFrom<&SensorRecord> for Sensor {
     type Error = HandlerError;
 
+    /// Ensure that:
+    ///
+    /// 1. The sensor has an associated plant.
+    /// 2. The sensor's dry adc is higher than the sensor's wet adc.
+    /// 3. The sensor is not archived.
+    /// 4. The plant associated with the sensor is not archived.
     fn try_from(sensor_row: &SensorRecord) -> Result<Self, HandlerError> {
         let plant_id = sensor_row
             .plant_id
@@ -47,6 +57,7 @@ impl TryFrom<&SensorRecord> for Sensor {
 }
 
 impl Sensor {
+    /// Indicate if the recorded adc from a message is between its sensor's dry and wet adc.
     pub fn check_adc(&self, adc: i32) -> Result<(), HandlerError> {
         if !(self.wet_adc..=self.dry_adc).contains(&adc) {
             return Err(HandlerError::AdcNotInRange);
@@ -54,6 +65,9 @@ impl Sensor {
         Ok(())
     }
 
+    /// Convert an ADC reading to moisture percentage: dry is 0%, wet is 100%.
+    ///
+    /// Does not validate the reading: Call [`Sensor::check_adc`] first.
     pub fn calculate_moisture_perc(&self, adc: i32) -> f64 {
         let adc = adc as f64;
         let dry_adc = self.dry_adc as f64;
