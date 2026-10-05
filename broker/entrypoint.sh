@@ -3,9 +3,11 @@
 set -e # Exit if command status != 0
 
 PWFILE="/mosquitto/config/pwfile"
+MQTT_USERNAME=$(cat "/run/secrets/mqtt_username")
+MQTT_PASSWORD=$(cat "/run/secrets/mqtt_password")
 
-if [ -z "$MQTT_USERNAME" ] || [ -z "$MQTT_PASSWORD" ]; then
-  echo "Missing MQTT_USERNAME or MQTT_PASSWORD env vars."
+if [ -z "${MQTT_USERNAME}" ] || [ -z "${MQTT_PASSWORD}" ]; then
+  echo "Missing MQTT_USERNAME or MQTT_PASSWORD files in secrets dir."
   exit 1
 fi
 

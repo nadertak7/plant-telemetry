@@ -2,9 +2,9 @@ services:
   broker:
     container_name: broker
     build: ./broker
-    environment:
-      MQTT_USERNAME: ${MQTT_USERNAME}
-      MQTT_PASSWORD: ${MQTT_PASSWORD}
+    secrets:
+      - mqtt_username
+      - mqtt_password
     ports:
       - "1883:1883"
     volumes:

@@ -45,7 +45,7 @@ def write_decrypted_secret_to_file(secrets: dict[str, str]) -> None:
 
 
 def main() -> None:
-    DECRYPTED_SECRETS_DIR.mkdir(mode=0o700, exist_ok=True)
+    DECRYPTED_SECRETS_DIR.mkdir(0o700, exist_ok=True)
     DECRYPTED_SECRETS_DIR.chmod(0o700)
     json_secrets = decrypt_secrets_file()
     remove_unused_secrets(json_secrets)

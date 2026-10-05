@@ -4,7 +4,7 @@ EXPOSE 1883
 
 COPY config/mosquitto.conf /mosquitto/config/mosquitto.conf
 
-COPY --chmod=755 entrypoint.sh /entrypoint.sh
+COPY --chmod=700 entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 
 # Default CMD in image - sent to entrypoint.
