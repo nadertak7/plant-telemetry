@@ -8,4 +8,4 @@ decrypt:
 
 encrypt:
 	sops encrypt --in-place ${SECRET_FILEPATH}
-	$(MAKE) write_secrets
+	$(MAKE) generate
