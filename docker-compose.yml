@@ -36,10 +36,11 @@ services:
       args:
         PACKAGE_NAME: "consumer"
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_SUPER_USERNAME}:${POSTGRES_SUPER_PASSWORD}@database:5432/${POSTGRES_DB}
       MQTT_HOST: broker
-      MQTT_USERNAME: ${MQTT_USERNAME}
-      MQTT_PASSWORD: ${MQTT_PASSWORD}
+    secrets:
+      - postgres_database_url
+      - mqtt_username
+      - mqtt_password
     depends_on:
       - database
       - broker
@@ -58,3 +59,5 @@ secrets:
     file: ./secrets/postgres_super_password
   postgres_super_username:
     file: ./secrets/postgres_super_username
+  postgres_database_url:
+    file: ./secrets/postgres_database_url
