@@ -48,3 +48,13 @@ services:
 volumes:
   postgres-data:
   mosquitto-data:
+
+secrets:
+  mqtt_username:
+    file: ./secrets/mqtt_username
+  mqtt_password:
+    file: ./secrets/mqtt_password
+  postgres_super_password:
+    file: ./secrets/postgres_super_password
+  postgres_super_username:
+    file: ./secrets/postgres_super_username
