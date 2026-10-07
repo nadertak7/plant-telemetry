@@ -46,6 +46,21 @@ services:
       - broker
     restart: unless-stopped
 
+  vector:
+    image: timberio/vector:latest-alpine
+    container_name: vector
+    volumes:
+      - ./vector:/etc/vector
+      - /var/run/docker.sock:/var/run/docker.sock
+    secrets:
+      - betterstack_auth_token
+    ports:
+      - '8686:8686'
+    command: ["-c", "/etc/vector/vector.yaml"]
+    depends_on:
+      - consumer
+    restart: unless-stopped
+
 volumes:
   postgres-data:
   mosquitto-data:
@@ -61,3 +76,5 @@ secrets:
     file: ./secrets/postgres_super_username
   postgres_database_url:
     file: ./secrets/postgres_database_url
+  betterstack_auth_token:
+    file: ./secrets/betterstack_auth_token

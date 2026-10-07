@@ -1,0 +1,22 @@
+sources:
+  docker_logs:
+    type: docker_logs
+
+sinks:
+  betterstack:
+    type: http
+    method: post
+    inputs:
+      - "docker_logs"
+    uri: https://s2782572.us-west-2a.betterstackdata.com
+    encoding:
+      codec: json
+    auth:
+      strategy: bearer
+      token: "SECRET[secrets_directory.betterstack_auth_token]"
+
+secret:
+  secrets_directory:
+    type: "directory"
+    path: "/run/secrets"
+    remove_trailing_whitespace: true
