@@ -28,8 +28,6 @@ async fn main() -> anyhow::Result<()> {
             return Err(e);
         }
     };
-
-    db::run_migrations(&pool).await?;
     let (mqtt_client, mut event_loop) = mqtt::get_client(&settings.mqtt_settings);
 
     loop {
