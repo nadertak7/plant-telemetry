@@ -4,6 +4,7 @@ ARG PACKAGE_NAME
 ENV SQLX_OFFLINE=true
 WORKDIR /app
 RUN --mount=type=bind,source=consumer,target=consumer \
+    --mount=type=bind,source=api,target=api \
     --mount=type=bind,source=shared,target=shared \
     --mount=type=bind,source=Cargo.toml,target=Cargo.toml \
     --mount=type=bind,source=Cargo.lock,target=Cargo.lock \
