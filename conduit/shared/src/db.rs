@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests;
 
-use crate::settings::DatabaseSettings;
+use crate::settings::{DatabaseSettings, Settings};
 use anyhow::Context;
 use sqlx::migrate::Migrator;
 use sqlx::postgres::PgPoolOptions;

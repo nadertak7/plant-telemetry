@@ -46,6 +46,18 @@ services:
       - broker
     restart: unless-stopped
 
+  api:
+    container_name: api
+    build:
+      context: ./conduit
+      args:
+        PACKAGE_NAME: "api"
+    secrets:
+      - postgres_database_url
+    depends_on:
+      - consumer
+    restart: unless-stopped
+
   vector:
     image: timberio/vector:latest-alpine
     container_name: vector
