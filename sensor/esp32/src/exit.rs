@@ -14,7 +14,7 @@ pub enum SleepReason {
 pub fn blink_on_error(led: &mut Output, delay: &Delay, rtc: Rtc) -> ! {
     for _ in 0..config::LED_FLASHES_ERROR * 2 {
         led.toggle();
-        delay.delay_millis(1000);
+        delay.delay_millis(config::LED_FLASHES_ERROR_INTERVAL_MS);
     }
     sleep_deep(rtc, &delay, SleepReason::Error)
 }
