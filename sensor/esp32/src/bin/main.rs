@@ -19,14 +19,14 @@ enum SleepReason {
     Error,
 }
 
-// Log and reset system when flashed software panics
+/// Log and reset system when flashed software panics
 #[panic_handler]
 fn panic(panic_info: &core::panic::PanicInfo) -> ! {
-    log::info!("panicked: {}", panic_info.message());
+    log::error!("panicked: {}", panic_info.message());
     esp_hal::system::software_reset();
 }
 
-// Blink n times when an error occurs
+/// Blink n times when an error occurs
 fn blink_on_error(led: &mut Output, delay: &Delay, rtc: Rtc) -> ! {
     for _ in 0..config::LED_FLASHES_ERROR * 2 {
         led.toggle();
@@ -35,11 +35,11 @@ fn blink_on_error(led: &mut Output, delay: &Delay, rtc: Rtc) -> ! {
     sleep_deep(rtc, &delay, SleepReason::Error)
 }
 
-// Put the microcontroller to deep sleep, wake up after a delay
+/// Put the microcontroller to deep sleep, wake up after a delay
 fn sleep_deep(mut rtc: Rtc, delay: &Delay, reason: SleepReason) -> ! {
     let duration = match reason {
-        SleepReason::Success => config::DEEP_SLEEP_SECS_SUCCESS,
-        SleepReason::Error => config::DEEP_SLEEP_SECS_ERROR,
+        SleepReason::Success => config::DEEP_SLEEP_DURATION_SUCCESS,
+        SleepReason::Error => config::DEEP_SLEEP_DURATION_ERROR,
     };
     let timer = TimerWakeupSource::new(duration);
     log::info!("sleeping for {} seconds", duration.as_secs());
@@ -70,16 +70,23 @@ fn main() -> ! {
 
     let rtc = Rtc::new(peripherals.LPWR);
 
-    let _adc_value = match nb::block!(adc.read_oneshot(&mut adc_pin)) {
-        Ok(v) => {
-            log::info!("recorded ADC: {}", v);
-            v
-        }
-        Err(e) => {
-            log::error!("there was an error recording ADC: {:#?}", e);
-            blink_on_error(&mut led, &delay, rtc);
-        }
-    };
+    let mut total_adc: u32 = 0;
+    for i in 0..config::ADC_POLL_COUNT {
+        let recorded_adc = match nb::block!(adc.read_oneshot(&mut adc_pin)) {
+            Ok(v) => {
+                log::info!("recorded ADC attempt {}: {}", i + 1, v);
+                v
+            }
+            Err(e) => {
+                log::error!("there was an error recording ADC: {:#?}", e);
+                blink_on_error(&mut led, &delay, rtc);
+            }
+        };
+        total_adc += u32::from(recorded_adc);
+        delay.delay_millis(config::ADC_POLL_INTERVAL_MS);
+    }
+    let average_adc = total_adc / config::ADC_POLL_COUNT;
+    log::info!("Average adc is {}", average_adc);
 
     sleep_deep(rtc, &delay, SleepReason::Success);
 }
