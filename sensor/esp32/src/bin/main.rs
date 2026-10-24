@@ -9,8 +9,8 @@ use esp_hal::main;
 use esp_hal::rtc_cntl::Rtc;
 use log::LevelFilter;
 use plant_sensor::config;
-use plant_sensor::exit;
-use plant_sensor::exit::SleepReason;
+use plant_sensor::reset;
+use plant_sensor::reset::SleepReason;
 
 extern crate alloc;
 
@@ -36,7 +36,7 @@ fn main() -> ! {
     let peripherals = esp_hal::init(config);
 
     let output_config = OutputConfig::default();
-    let mut led = Output::new(peripherals.GPIO2, Level::Low, output_config);
+    let led = Output::new(peripherals.GPIO2, Level::Low, output_config);
 
     let mut adc_config = AdcConfig::new();
     let mut adc_pin = adc_config.enable_pin(peripherals.GPIO32, Attenuation::_11dB);
@@ -53,7 +53,7 @@ fn main() -> ! {
             }
             Err(e) => {
                 log::error!("there was an error recording ADC: {:#?}", e);
-                exit::blink_on_error(&mut led, &delay, rtc);
+                reset::sleep_deep(rtc, delay, SleepReason::Error { led });
             }
         };
         total_adc += u32::from(recorded_adc);
@@ -62,5 +62,5 @@ fn main() -> ! {
     let average_adc = total_adc / config::ADC_POLL_COUNT;
     log::info!("Average adc is {}", average_adc);
 
-    exit::sleep_deep(rtc, &delay, SleepReason::Success);
+    reset::sleep_deep(rtc, delay, SleepReason::Success);
 }
