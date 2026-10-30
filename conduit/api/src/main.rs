@@ -1,8 +1,15 @@
-use std::{thread::sleep, time::Duration};
+use shared::logger;
 
-fn main() {
-    loop {
-        println!("Hello, world!");
-        sleep(Duration::from_secs(10));
-    }
+pub mod endpoints;
+pub mod schema;
+
+#[tokio::main]
+async fn main() {
+    logger::initialise();
+
+    let app = endpoints::router();
+    let listener = tokio::net::TcpListener::bind("localhost:6767")
+        .await
+        .unwrap();
+    axum::serve(listener, app).await.unwrap();
 }
