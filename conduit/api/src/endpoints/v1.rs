@@ -1,7 +1,12 @@
+use std::sync::Arc;
+
 use axum::Router;
 
-pub mod home;
+use crate::AppState;
 
-pub fn router() -> Router {
-    Router::new().merge(home::router())
+pub mod home;
+pub mod sensor;
+
+pub fn router() -> Router<Arc<AppState>> {
+    Router::new().merge(home::router()).merge(sensor::router())
 }
