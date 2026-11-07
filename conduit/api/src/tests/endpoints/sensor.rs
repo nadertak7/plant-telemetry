@@ -100,6 +100,7 @@ async fn test_list_sensor(
 #[rstest]
 #[case::happy_path_with_plant(json!({ "topic": "test", "dry_adc": 500, "wet_adc": 100, "plant": { "id": 1 } }), StatusCode::CREATED)]
 #[case::happy_path_without_plant(json!({ "topic": "test", "dry_adc": 500, "wet_adc": 100 }), StatusCode::CREATED)]
+#[case::archived_plant(json!({ "topic": "test", "dry_adc": 500, "wet_adc": 100, "plant": { "id": 2 } }), StatusCode::UNPROCESSABLE_ENTITY)]
 #[case::invalid_adcs(json!({ "topic": "test", "dry_adc": 100, "wet_adc": 500 }), StatusCode::UNPROCESSABLE_ENTITY)]
 #[case::missing_key(json!({ "topic": "test", "dry_adc": 500 }), StatusCode::UNPROCESSABLE_ENTITY)]
 #[case::wrong_datatype(json!({ "topic": 1, "dry_adc": 500, "wet_adc": 100 }), StatusCode::UNPROCESSABLE_ENTITY)]

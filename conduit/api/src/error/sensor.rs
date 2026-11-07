@@ -2,7 +2,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum SensorCreateError {
-    #[error("the provided plant id does not exist: {}", id)]
+    #[error("the provided plant id does not exist or is archived: {}", id)]
     PlantNotFound { id: i32 },
     #[error(
         "the wet adc value {} must not exceed the dry adc value {}",

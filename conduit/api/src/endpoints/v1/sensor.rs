@@ -48,7 +48,7 @@ async fn create(
     extract::Json(payload): Json<SensorCreate>,
 ) -> Result<(StatusCode, Json<SensorRead>), AppError> {
     if let Some(plant) = &payload.plant {
-        let plant_exists = dao::plant::check_plant_exists_by_id(plant.id, &state.db).await?;
+        let plant_exists = dao::plant::check_active_plant_exists_by_id(plant.id, &state.db).await?;
         if !plant_exists {
             return Err(SensorCreateError::PlantNotFound { id: plant.id }.into());
         }

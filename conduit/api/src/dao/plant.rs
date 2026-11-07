@@ -1,7 +1,7 @@
 use sqlx::PgPool;
 
 /// Return true id a plant with a given id exists. Else false.
-pub async fn check_plant_exists_by_id(id: i32, pool: &PgPool) -> Result<bool, sqlx::Error> {
+pub async fn check_active_plant_exists_by_id(id: i32, pool: &PgPool) -> Result<bool, sqlx::Error> {
     let result = sqlx::query_scalar!(
         r#"
         SELECT
@@ -12,6 +12,7 @@ pub async fn check_plant_exists_by_id(id: i32, pool: &PgPool) -> Result<bool, sq
                     plant
                 WHERE
                     plant.id = $1
+                    AND plant.archived_at IS NULL
             ) "exists!"
         "#,
         id
