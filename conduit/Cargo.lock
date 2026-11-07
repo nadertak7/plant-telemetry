@@ -39,7 +39,6 @@ dependencies = [
  "anyhow",
  "axum",
  "axum-test",
- "chrono",
  "rstest",
  "serde",
  "serde_json",
