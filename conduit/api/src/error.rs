@@ -10,16 +10,16 @@ pub mod sensor;
 
 pub enum AppError {
     NotFound(String),
-    BadRequest(String),
     Internal(String),
     Conflict(String),
+    Unprocessable(String),
 }
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (status, message) = match self {
             AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
-            AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
+            AppError::Unprocessable(msg) => (StatusCode::UNPROCESSABLE_ENTITY, msg),
             AppError::Conflict(msg) => (StatusCode::CONFLICT, msg),
             AppError::Internal(msg) => {
                 tracing::error!("Internal error: {msg}");
@@ -47,7 +47,7 @@ impl From<SensorCreateError> for AppError {
         match err {
             SensorCreateError::DuplicateTopic { .. } => AppError::Conflict(err.to_string()),
             SensorCreateError::InvalidAdc { .. } | SensorCreateError::PlantNotFound { .. } => {
-                AppError::BadRequest(err.to_string())
+                AppError::Unprocessable(err.to_string())
             }
             SensorCreateError::Database(_) => AppError::Internal(err.to_string()),
         }

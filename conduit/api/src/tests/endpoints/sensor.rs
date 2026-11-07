@@ -1,4 +1,5 @@
 use crate::tests::endpoints::common;
+use axum::http::StatusCode;
 use axum_test::expect_json::{self, iso_date_time};
 use rstest::rstest;
 use serde::Deserialize;
@@ -93,4 +94,43 @@ async fn test_list_sensor(
     ids.sort();
     expected_ids.sort();
     assert_eq!(expected_ids, ids);
+}
+
+/// Assert sensor create endpoint payloads against expected outputs.
+#[rstest]
+#[case::happy_path_with_plant(json!({ "topic": "test", "dry_adc": 500, "wet_adc": 100, "plant": { "id": 1 } }), StatusCode::CREATED)]
+#[case::happy_path_without_plant(json!({ "topic": "test", "dry_adc": 500, "wet_adc": 100 }), StatusCode::CREATED)]
+#[case::invalid_adcs(json!({ "topic": "test", "dry_adc": 100, "wet_adc": 500 }), StatusCode::UNPROCESSABLE_ENTITY)]
+#[case::missing_key(json!({ "topic": "test", "dry_adc": 500 }), StatusCode::UNPROCESSABLE_ENTITY)]
+#[case::wrong_datatype(json!({ "topic": 1, "dry_adc": 500, "wet_adc": 100 }), StatusCode::UNPROCESSABLE_ENTITY)]
+#[case::non_existent_plant(json!({ "topic": "test", "dry_adc": 500, "wet_adc": 100, "plant": { "id": 9999 } }), StatusCode::UNPROCESSABLE_ENTITY)]
+#[sqlx::test(migrator = "MIGRATOR", fixtures("plant"))]
+async fn test_create_sensor(
+    #[case] body: Value,
+    #[case] expected_status_code: StatusCode,
+    #[ignore] pool: PgPool,
+) {
+    let response = common::server(pool).post("/v1/sensor").json(&body).await;
+
+    response.assert_status(expected_status_code);
+    if expected_status_code == StatusCode::CREATED {
+        response.assert_json_contains(&body);
+    }
+}
+
+/// Assert that a sensor with an already existing topic returns a conflict error.
+#[sqlx::test(migrator = "MIGRATOR")]
+async fn test_create_sensor_duplicate_topic(pool: PgPool) {
+    let payload = json!({ "topic": "test", "dry_adc": 500, "wet_adc": 100 });
+    let response = common::server(pool.clone())
+        .post("/v1/sensor")
+        .json(&payload)
+        .await;
+    response.assert_status(StatusCode::CREATED);
+
+    let response = common::server(pool.clone())
+        .post("/v1/sensor")
+        .json(&payload)
+        .await;
+    response.assert_status(StatusCode::CONFLICT);
 }
