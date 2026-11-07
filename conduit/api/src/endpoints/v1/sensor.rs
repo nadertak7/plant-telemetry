@@ -1,21 +1,23 @@
 use std::sync::Arc;
 
 use axum::Json;
+use axum::extract;
 use axum::extract::{Path, Query, State};
+use axum::http::StatusCode;
 use axum::{Router, routing::get};
 
 use crate::AppState;
 use crate::dao;
 use crate::error::AppError;
-use crate::schema::sensor::{SensorListParameters, SensorRead, SensorRecord};
+use crate::schema::sensor::{SensorCreate, SensorListParameters, SensorRead, SensorRecord};
 
 pub fn router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/sensor/{id}", get(read))
-        .route("/sensor", get(list))
+        .route("/sensor", get(list).post(create))
 }
 
-/// Get sensor details from an id.
+/// Get sensor details from a provided id.
 async fn read(
     Path(id): Path<i32>,
     State(state): State<Arc<AppState>>,
@@ -37,4 +39,22 @@ async fn list(
         .map(SensorRead::from)
         .collect();
     Ok(Json(sensors))
+}
+
+/// Create a sensor.
+async fn create(
+    State(state): State<Arc<AppState>>,
+    extract::Json(payload): Json<SensorCreate>,
+) -> Result<(StatusCode, Json<SensorRead>), AppError> {
+    if let Some(plant) = &payload.plant {
+        let plant_exists = dao::plant::check_plant_exists_by_id(plant.id, &state.db).await?;
+        if !plant_exists {
+            return Err(AppError::BadRequest(format!(
+                "the provided plant id does not exist: {}",
+                plant.id
+            )));
+        }
+    }
+    let sensor = dao::sensor::create_sensor(&payload, &state.db).await?;
+    Ok((StatusCode::CREATED, Json(sensor.into())))
 }

@@ -1,6 +1,6 @@
 use sqlx::{PgPool, Postgres, QueryBuilder};
 
-use crate::schema::sensor::{SensorListParameters, SensorRecord};
+use crate::schema::sensor::{SensorCreate, SensorListParameters, SensorRecord};
 
 fn query_base() -> QueryBuilder<Postgres> {
     QueryBuilder::new(
@@ -60,4 +60,30 @@ pub async fn get_sensor_list(
         .fetch_all(db)
         .await?;
     Ok(sensors)
+}
+
+pub async fn create_sensor(
+    payload: &SensorCreate,
+    db: &PgPool,
+) -> Result<SensorRecord, sqlx::Error> {
+    let id = sqlx::query_scalar!(
+        r#"
+        INSERT INTO
+            sensor
+            (topic, dry_adc, wet_adc, plant_id)
+        VALUES
+            ($1, $2, $3, $4)
+        RETURNING
+            id
+        "#,
+        payload.topic,
+        payload.dry_adc,
+        payload.wet_adc,
+        payload.plant.as_ref().map(|plant| plant.id)
+    )
+    .fetch_one(db)
+    .await?;
+    get_sensor_by_id(id, db)
+        .await?
+        .ok_or(sqlx::Error::RowNotFound)
 }

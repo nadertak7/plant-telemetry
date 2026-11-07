@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use sqlx::types::chrono::{DateTime, Utc};
 
+use crate::schema::common::ObjectWithId;
+
 #[derive(sqlx::FromRow)]
 pub struct SensorRecord {
     pub id: i32,
@@ -59,4 +61,12 @@ impl From<SensorRecord> for SensorRead {
 pub struct SensorListParameters {
     pub topic: Option<String>,
     pub archived: Option<bool>,
+}
+
+#[derive(Deserialize)]
+pub struct SensorCreate {
+    pub topic: String,
+    pub dry_adc: i32,
+    pub wet_adc: i32,
+    pub plant: Option<ObjectWithId>,
 }
