@@ -1,6 +1,9 @@
 use sqlx::{PgPool, Postgres, QueryBuilder};
 
-use crate::schema::sensor::{SensorCreate, SensorListParameters, SensorRecord};
+use crate::{
+    error::sensor::SensorCreateError,
+    schema::sensor::{SensorCreate, SensorListParameters, SensorRecord},
+};
 
 fn query_base() -> QueryBuilder<Postgres> {
     QueryBuilder::new(
@@ -65,8 +68,8 @@ pub async fn get_sensor_list(
 pub async fn create_sensor(
     payload: &SensorCreate,
     db: &PgPool,
-) -> Result<SensorRecord, sqlx::Error> {
-    let id = sqlx::query_scalar!(
+) -> Result<SensorRecord, SensorCreateError> {
+    let result = sqlx::query_scalar!(
         r#"
         INSERT INTO
             sensor
@@ -76,14 +79,37 @@ pub async fn create_sensor(
         RETURNING
             id
         "#,
-        payload.topic,
-        payload.dry_adc,
-        payload.wet_adc,
+        &payload.topic,
+        i32::from(payload.dry_adc),
+        i32::from(payload.wet_adc),
         payload.plant.as_ref().map(|plant| plant.id)
     )
     .fetch_one(db)
-    .await?;
+    .await;
+    let id = match result {
+        Ok(v) => v,
+        Err(e) => {
+            if let Some(db_error) = e.as_database_error() {
+                match db_error.constraint() {
+                    Some("ck_sensor_dry_adc_wet_adc") => {
+                        return Err(SensorCreateError::InvalidAdc {
+                            dry_adc: payload.dry_adc,
+                            wet_adc: payload.wet_adc,
+                        });
+                    }
+                    Some("ux_sensor_topic") => {
+                        return Err(SensorCreateError::DuplicateTopic {
+                            topic: payload.topic.clone(),
+                        });
+                    }
+                    _ => {}
+                }
+            };
+            return Err(SensorCreateError::Database(e));
+        }
+    };
+
     get_sensor_by_id(id, db)
         .await?
-        .ok_or(sqlx::Error::RowNotFound)
+        .ok_or(sqlx::Error::RowNotFound.into())
 }

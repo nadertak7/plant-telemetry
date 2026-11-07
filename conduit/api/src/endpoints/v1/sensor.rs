@@ -9,6 +9,7 @@ use axum::{Router, routing::get};
 use crate::AppState;
 use crate::dao;
 use crate::error::AppError;
+use crate::error::sensor::SensorCreateError;
 use crate::schema::sensor::{SensorCreate, SensorListParameters, SensorRead, SensorRecord};
 
 pub fn router() -> Router<Arc<AppState>> {
@@ -49,10 +50,7 @@ async fn create(
     if let Some(plant) = &payload.plant {
         let plant_exists = dao::plant::check_plant_exists_by_id(plant.id, &state.db).await?;
         if !plant_exists {
-            return Err(AppError::BadRequest(format!(
-                "the provided plant id does not exist: {}",
-                plant.id
-            )));
+            return Err(SensorCreateError::PlantNotFound { id: plant.id }.into());
         }
     }
     let sensor = dao::sensor::create_sensor(&payload, &state.db).await?;
