@@ -9,7 +9,6 @@ use axum::{Router, routing::get};
 use crate::AppState;
 use crate::dao;
 use crate::error::AppError;
-use crate::error::sensor::SensorMutateError;
 use crate::schema::sensor::{SensorListParameters, SensorMutate, SensorRead, SensorRecord};
 
 pub fn router() -> Router<Arc<AppState>> {
@@ -47,12 +46,6 @@ async fn create(
     State(state): State<Arc<AppState>>,
     extract::Json(payload): Json<SensorMutate>,
 ) -> Result<(StatusCode, Json<SensorRead>), AppError> {
-    if let Some(plant) = &payload.plant {
-        let plant_exists = dao::plant::check_active_plant_exists_by_id(plant.id, &state.db).await?;
-        if !plant_exists {
-            return Err(SensorMutateError::PlantNotFound { id: plant.id }.into());
-        }
-    }
     let sensor = dao::sensor::create_sensor(&payload, &state.db).await?;
     Ok((StatusCode::CREATED, Json(sensor.into())))
 }
@@ -63,16 +56,6 @@ async fn update(
     State(state): State<Arc<AppState>>,
     extract::Json(payload): Json<SensorMutate>,
 ) -> Result<(StatusCode, Json<SensorRead>), AppError> {
-    let sensor_exists = dao::sensor::check_active_sensor_exists_by_id(id, &state.db).await?;
-    if !(sensor_exists) {
-        return Err(SensorMutateError::SensorNotFound { id }.into());
-    }
-    if let Some(plant) = &payload.plant {
-        let plant_exists = dao::plant::check_active_plant_exists_by_id(plant.id, &state.db).await?;
-        if !plant_exists {
-            return Err(SensorMutateError::PlantNotFound { id: plant.id }.into());
-        }
-    }
     let sensor = dao::sensor::update_sensor(&payload, id, &state.db).await?;
     Ok((StatusCode::OK, Json(sensor.into())))
 }

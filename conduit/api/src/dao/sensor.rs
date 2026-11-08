@@ -13,18 +13,18 @@ fn query_base() -> QueryBuilder<Postgres> {
             sensor.topic,
             plant.id "plant_id",
             plant.display_name "plant_display_name",
+            plant.archived_at "plant_archived_at",
             sensor.dry_adc,
             sensor.wet_adc,
             sensor.created_at,
             sensor.updated_at,
-            sensor.archived_at,
+            sensor.archived_at "sensor_archived_at",
             sensor.last_active_at
         FROM
             sensor
         LEFT JOIN
             plant
             ON plant.id = sensor.plant_id
-            AND plant.archived_at is NULL
         "#,
     )
 }
@@ -38,28 +38,6 @@ pub async fn get_sensor_by_id(id: i32, db: &PgPool) -> Result<Option<SensorRecor
         .fetch_optional(db)
         .await?;
     Ok(sensor)
-}
-
-pub async fn check_active_sensor_exists_by_id(id: i32, db: &PgPool) -> Result<bool, sqlx::Error> {
-    let result = sqlx::query_scalar!(
-        r#"
-        SELECT
-            EXISTS(
-                SELECT
-                    1
-                FROM
-                    sensor
-                WHERE
-                    sensor.id = $1
-                AND
-                    sensor.archived_at IS NULL
-            ) "exists!"
-        "#,
-        id
-    )
-    .fetch_one(db)
-    .await?;
-    Ok(result)
 }
 
 pub async fn get_sensor_list(
@@ -106,6 +84,11 @@ fn handle_mutate_result<T>(
                         return Err(SensorMutateError::DuplicateTopic {
                             topic: payload.topic.clone(),
                         });
+                    }
+                    Some("fk_sensor_plant") => {
+                        if let Some(plant) = &payload.plant {
+                            return Err(SensorMutateError::PlantNotFound { id: plant.id });
+                        }
                     }
                     _ => {}
                 }
@@ -159,6 +142,7 @@ pub async fn update_sensor(
             updated_at = NOW()
         WHERE
             id = $5
+            AND archived_at IS NULL
         "#,
         payload.topic,
         i32::from(payload.dry_adc),
@@ -168,7 +152,10 @@ pub async fn update_sensor(
     )
     .execute(db)
     .await;
-    handle_mutate_result(result, payload)?;
+    let result = handle_mutate_result(result, payload)?;
+    if result.rows_affected() == 0 {
+        return Err(SensorMutateError::SensorNotFound { id });
+    }
     get_sensor_by_id(id, db)
         .await?
         .ok_or(sqlx::Error::RowNotFound.into())

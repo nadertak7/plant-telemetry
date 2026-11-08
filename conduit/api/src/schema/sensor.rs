@@ -11,16 +11,18 @@ pub struct SensorRecord {
     pub wet_adc: i32,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
-    pub archived_at: Option<DateTime<Utc>>,
+    pub sensor_archived_at: Option<DateTime<Utc>>,
     pub last_active_at: Option<DateTime<Utc>>,
     pub plant_id: Option<i32>,
     pub plant_display_name: Option<String>,
+    pub plant_archived_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Serialize)]
 pub struct SensorPlant {
     id: i32,
     display_name: String,
+    archived_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Serialize)]
@@ -38,8 +40,14 @@ pub struct SensorRead {
 
 impl From<SensorRecord> for SensorRead {
     fn from(row: SensorRecord) -> Self {
-        let plant = if let (Some(id), Some(display_name)) = (row.plant_id, row.plant_display_name) {
-            Some(SensorPlant { id, display_name })
+        let plant = if let (Some(id), Some(display_name), archived_at) =
+            (row.plant_id, row.plant_display_name, row.plant_archived_at)
+        {
+            Some(SensorPlant {
+                id,
+                display_name,
+                archived_at,
+            })
         } else {
             None
         };
@@ -50,7 +58,7 @@ impl From<SensorRecord> for SensorRead {
             wet_adc: row.wet_adc,
             created_at: row.created_at,
             updated_at: row.updated_at,
-            archived_at: row.archived_at,
+            archived_at: row.sensor_archived_at,
             last_active_at: row.last_active_at,
             plant,
         }

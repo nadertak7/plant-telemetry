@@ -20,7 +20,8 @@ fn sensor_id_1_expected_json() -> Value {
             "last_active_at": null,
             "plant": {
                 "id": 1,
-                "display_name": "Active Plant"
+                "display_name": "Active Plant",
+                "archived_at": null
             },
         }
     )
@@ -30,12 +31,25 @@ fn sensor_id_1_expected_json() -> Value {
 fn no_plant_expected_json() -> Value {
     json!(
         {
-            "plant": null
+            "plant": null,
         }
     )
 }
 
-/// An archived sensor will appear in the response with an archived date populated.
+/// A sensor should have its archived plant appear with its archived date populated.
+fn archived_plant_expected_json() -> Value {
+    json!(
+        {
+            "plant": {
+                "id": expect_json::integer(),
+                "display_name": expect_json::string(),
+                "archived_at": expect_json::iso_date_time()
+            }
+        }
+    )
+}
+
+/// An archived sensor should appear in the response with an archived date populated
 fn archived_expected_json() -> Value {
     json!(
         {
@@ -47,7 +61,7 @@ fn archived_expected_json() -> Value {
 /// Assert sensor view endpoint responses against expected outputs.
 #[rstest]
 #[case::active_with_plant(1, sensor_id_1_expected_json())]
-#[case::active_with_archived_plant(2, no_plant_expected_json())]
+#[case::active_with_archived_plant(2, archived_plant_expected_json())]
 #[case::active_without_plant(3, no_plant_expected_json())]
 #[case::archived(4, archived_expected_json())]
 #[sqlx::test(migrator = "MIGRATOR", fixtures("plant", "sensor"))]
@@ -100,7 +114,7 @@ async fn test_list_sensor(
 #[rstest]
 #[case::happy_path_with_plant(json!({ "topic": "test", "dry_adc": 500, "wet_adc": 100, "plant": { "id": 1 } }), StatusCode::CREATED)]
 #[case::happy_path_without_plant(json!({ "topic": "test", "dry_adc": 500, "wet_adc": 100 }), StatusCode::CREATED)]
-#[case::archived_plant(json!({ "topic": "test", "dry_adc": 500, "wet_adc": 100, "plant": { "id": 2 } }), StatusCode::UNPROCESSABLE_ENTITY)]
+#[case::happy_path_with_archived_plant(json!({ "topic": "test", "dry_adc": 500, "wet_adc": 100, "plant": { "id": 2 } }), StatusCode::CREATED)]
 #[case::invalid_adcs(json!({ "topic": "test", "dry_adc": 100, "wet_adc": 500 }), StatusCode::UNPROCESSABLE_ENTITY)]
 #[case::missing_key(json!({ "topic": "test", "dry_adc": 500 }), StatusCode::UNPROCESSABLE_ENTITY)]
 #[case::wrong_datatype(json!({ "topic": 1, "dry_adc": 500, "wet_adc": 100 }), StatusCode::UNPROCESSABLE_ENTITY)]
