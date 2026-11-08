@@ -133,7 +133,7 @@ async fn test_create_sensor(
     }
 }
 
-/// Assert that a sensor with an already existing topic returns a conflict error.
+/// Ensure that a sensor with an already existing topic returns a conflict error.
 #[sqlx::test(migrator = "MIGRATOR")]
 async fn test_create_sensor_duplicate_topic(pool: PgPool) {
     let payload = json!({ "topic": "test", "dry_adc": 500, "wet_adc": 100 });
@@ -148,4 +148,109 @@ async fn test_create_sensor_duplicate_topic(pool: PgPool) {
         .json(&payload)
         .await;
     response.assert_status(StatusCode::CONFLICT);
+}
+
+/// Assert sensor update endpoint payloads against expected outputs.
+#[rstest]
+#[case::happy_path_no_fields_changed(json!({ "topic": "sensor/update", "dry_adc": 500, "wet_adc": 100, "plant": { "id": 1 } }), StatusCode::OK)]
+#[case::happy_path_all_fields_changed(json!({ "topic": "sensor/update2", "dry_adc": 501, "wet_adc": 101, "plant": { "id": 2 } }), StatusCode::OK)]
+#[case::happy_path_some_fields_changed(json!({ "topic": "sensor/update1", "dry_adc": 501, "wet_adc": 101, "plant": { "id": 1 } }), StatusCode::OK)]
+#[case::happy_path_nullify_plant(json!({ "topic": "sensor/update", "dry_adc": 500, "wet_adc": 100, "plant": null }), StatusCode::OK)]
+#[case::invalid_adcs(json!({ "topic": "sensor/update", "dry_adc": 100, "wet_adc": 500 }), StatusCode::UNPROCESSABLE_ENTITY)]
+#[case::missing_key(json!({ "topic": "sensor/update", "dry_adc": 500 }), StatusCode::UNPROCESSABLE_ENTITY)]
+#[case::wrong_datatype(json!({ "topic": 1, "dry_adc": 500, "wet_adc": 100 }), StatusCode::UNPROCESSABLE_ENTITY)]
+#[case::non_existent_plant(json!({ "topic": "sensor/update", "dry_adc": 500, "wet_adc": 100, "plant": { "id": 9999 } }), StatusCode::UNPROCESSABLE_ENTITY)]
+#[sqlx::test(migrator = "MIGRATOR", fixtures("plant"))]
+async fn test_update_sensor(
+    #[case] body: Value,
+    #[case] expected_status_code: StatusCode,
+    #[ignore] pool: PgPool,
+) -> Result<(), sqlx::Error> {
+    let existing_topic = "sensor/update";
+    let existing_dry_adc = 500;
+    let existing_wet_adc = 100;
+    let existing_plant_id = Some(1);
+    let existing_sensor_id = sqlx::query_scalar!(
+        r#"
+        INSERT INTO
+            sensor
+            (topic, dry_adc, wet_adc, plant_id)
+        VALUES
+            ($1, $2, $3, $4)
+        RETURNING
+            id
+        "#,
+        existing_topic,
+        existing_dry_adc,
+        existing_wet_adc,
+        existing_plant_id
+    )
+    .fetch_one(&pool)
+    .await?;
+
+    let response = common::server(pool.clone())
+        .put(&format!("/v1/sensor/{}", existing_sensor_id))
+        .json(&body)
+        .await;
+
+    response.assert_status(expected_status_code);
+
+    if response.status_code() == StatusCode::OK {
+        response.assert_json_contains(&body);
+    } else {
+        let record = sqlx::query!(
+            r#"
+            SELECT
+                topic,
+                dry_adc,
+                wet_adc,
+                plant_id "plant_id?"
+            FROM
+                sensor
+            WHERE
+                sensor.id = $1
+            "#,
+            existing_sensor_id
+        )
+        .fetch_one(&pool)
+        .await?;
+        assert_eq!(record.topic, existing_topic);
+        assert_eq!(record.dry_adc, existing_dry_adc);
+        assert_eq!(record.wet_adc, existing_wet_adc);
+        assert_eq!(record.plant_id, existing_plant_id);
+    }
+    Ok(())
+}
+
+/// Ensure that a provided sensor id that does not reference an existing sensor returns a not found error.
+#[sqlx::test(migrator = "MIGRATOR")]
+async fn test_update_sensor_nonexistent_sensor_id(pool: PgPool) {
+    let response = common::server(pool.clone())
+        .put(&format!("/v1/sensor/999"))
+        .json(&json!({ "topic": "sensor/update", "dry_adc": 500, "wet_adc": 100 }))
+        .await;
+
+    response.assert_status(StatusCode::NOT_FOUND);
+}
+
+/// Ensure that updating a sensor with another sensor's topic returns a conflict error.
+#[sqlx::test(migrator = "MIGRATOR", fixtures("plant", "sensor"))]
+async fn test_update_sensor_with_existing_topic(pool: PgPool) {
+    let response = common::server(pool.clone())
+        .put(&format!("/v1/sensor/2"))
+        .json(&json!({ "topic": "sensor/active_with_plant", "dry_adc": 500, "wet_adc": 100 }))
+        .await;
+
+    response.assert_status(StatusCode::CONFLICT);
+}
+
+/// Ensure that an update to an archived sensor returns a not found error.
+#[sqlx::test(migrator = "MIGRATOR", fixtures("plant", "sensor"))]
+async fn test_update_archived_sensor(pool: PgPool) {
+    let response = common::server(pool.clone())
+        .put(&format!("/v1/sensor/4"))
+        .json(&json!({ "topic": "sensor/archived", "dry_adc": 500, "wet_adc": 100 }))
+        .await;
+
+    response.assert_status(StatusCode::NOT_FOUND);
 }
