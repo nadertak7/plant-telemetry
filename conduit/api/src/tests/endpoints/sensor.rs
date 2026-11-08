@@ -1,6 +1,6 @@
 use crate::tests::endpoints::common;
 use axum::http::StatusCode;
-use axum_test::expect_json::{self, iso_date_time};
+use axum_test::expect_json;
 use rstest::rstest;
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -53,7 +53,7 @@ fn archived_plant_expected_json() -> Value {
 fn archived_expected_json() -> Value {
     json!(
         {
-            "archived_at": iso_date_time(),
+            "archived_at": expect_json::iso_date_time(),
         }
     )
 }
@@ -225,8 +225,8 @@ async fn test_update_sensor(
 /// Ensure that a provided sensor id that does not reference an existing sensor returns a not found error.
 #[sqlx::test(migrator = "MIGRATOR")]
 async fn test_update_sensor_nonexistent_sensor_id(pool: PgPool) {
-    let response = common::server(pool.clone())
-        .put(&format!("/v1/sensor/999"))
+    let response = common::server(pool)
+        .put("/v1/sensor/999")
         .json(&json!({ "topic": "sensor/update", "dry_adc": 500, "wet_adc": 100 }))
         .await;
 
@@ -236,21 +236,38 @@ async fn test_update_sensor_nonexistent_sensor_id(pool: PgPool) {
 /// Ensure that updating a sensor with another sensor's topic returns a conflict error.
 #[sqlx::test(migrator = "MIGRATOR", fixtures("plant", "sensor"))]
 async fn test_update_sensor_with_existing_topic(pool: PgPool) {
-    let response = common::server(pool.clone())
-        .put(&format!("/v1/sensor/2"))
+    let response = common::server(pool)
+        .put("/v1/sensor/2")
         .json(&json!({ "topic": "sensor/active_with_plant", "dry_adc": 500, "wet_adc": 100 }))
         .await;
 
     response.assert_status(StatusCode::CONFLICT);
 }
 
-/// Ensure that an update to an archived sensor returns a not found error.
+/// Ensure that the archive status of a sensor is changed when updated.
+#[rstest]
+#[case::active_sensor_request_archive(1, json!({ "topic": "sensor/active_with_plant", "dry_adc": 500, "wet_adc": 100, "archived": true }), StatusCode::OK)]
+#[case::active_sensor_request_active(1, json!({ "topic": "sensor/active_with_plant", "dry_adc": 500, "wet_adc": 100, "archived": false }), StatusCode::OK)]
+#[case::archived_sensor_request_archive(4, json!({ "topic": "sensor/archived", "dry_adc": 500, "wet_adc": 100, "archived": true }), StatusCode::NOT_FOUND)]
+#[case::archived_sensor_request_active(4, json!({ "topic": "sensor/archived", "dry_adc": 500, "wet_adc": 100, "archived": false }), StatusCode::OK)]
 #[sqlx::test(migrator = "MIGRATOR", fixtures("plant", "sensor"))]
-async fn test_update_archived_sensor(pool: PgPool) {
-    let response = common::server(pool.clone())
-        .put(&format!("/v1/sensor/4"))
-        .json(&json!({ "topic": "sensor/archived", "dry_adc": 500, "wet_adc": 100 }))
+async fn test_update_sensor_archive_status(
+    #[case] id: i32,
+    #[case] body: Value,
+    #[case] expected_status_code: StatusCode,
+    #[ignore] pool: PgPool,
+) {
+    let response = common::server(pool)
+        .put(&format!("/v1/sensor/{}", id))
+        .json(&body)
         .await;
 
-    response.assert_status(StatusCode::NOT_FOUND);
+    response.assert_status(expected_status_code);
+    if expected_status_code == StatusCode::OK {
+        if &body["archived"] == true {
+            response.assert_json_contains(&json!({ "archived_at": expect_json::iso_date_time() }));
+        } else {
+            response.assert_json_contains(&json!({ "archived_at": null }));
+        }
+    }
 }

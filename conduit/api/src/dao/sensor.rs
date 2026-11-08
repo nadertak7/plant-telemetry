@@ -2,7 +2,7 @@ use sqlx::{PgPool, Postgres, QueryBuilder};
 
 use crate::{
     error::sensor::SensorMutateError,
-    schema::sensor::{SensorListParameters, SensorMutate, SensorRecord},
+    schema::sensor::{SensorCreate, SensorListParameters, SensorRecord, SensorUpdate},
 };
 
 fn query_base() -> QueryBuilder<Postgres> {
@@ -67,7 +67,10 @@ pub async fn get_sensor_list(
 
 fn handle_mutate_result<T>(
     result: Result<T, sqlx::Error>,
-    payload: &SensorMutate,
+    topic_in: &str,
+    dry_adc_in: u16,
+    wet_adc_in: u16,
+    plant_id_in: Option<i32>,
 ) -> Result<T, SensorMutateError> {
     match result {
         Ok(v) => Ok(v),
@@ -76,18 +79,18 @@ fn handle_mutate_result<T>(
                 match db_error.constraint() {
                     Some("ck_sensor_dry_adc_wet_adc") => {
                         return Err(SensorMutateError::InvalidAdc {
-                            dry_adc: payload.dry_adc,
-                            wet_adc: payload.wet_adc,
+                            dry_adc: dry_adc_in,
+                            wet_adc: wet_adc_in,
                         });
                     }
                     Some("ux_sensor_topic") => {
                         return Err(SensorMutateError::DuplicateTopic {
-                            topic: payload.topic.clone(),
+                            topic: topic_in.into(),
                         });
                     }
                     Some("fk_sensor_plant") => {
-                        if let Some(plant) = &payload.plant {
-                            return Err(SensorMutateError::PlantNotFound { id: plant.id });
+                        if let Some(plant_id) = plant_id_in {
+                            return Err(SensorMutateError::PlantNotFound { id: plant_id });
                         }
                     }
                     _ => {}
@@ -99,9 +102,10 @@ fn handle_mutate_result<T>(
 }
 
 pub async fn create_sensor(
-    payload: &SensorMutate,
+    payload: &SensorCreate,
     db: &PgPool,
 ) -> Result<SensorRecord, SensorMutateError> {
+    let plant_id_in = payload.plant.as_ref().map(|plant| plant.id);
     let result = sqlx::query_scalar!(
         r#"
         INSERT INTO
@@ -115,21 +119,28 @@ pub async fn create_sensor(
         payload.topic,
         i32::from(payload.dry_adc),
         i32::from(payload.wet_adc),
-        payload.plant.as_ref().map(|plant| plant.id)
+        plant_id_in
     )
     .fetch_one(db)
     .await;
-    let id = handle_mutate_result(result, payload)?;
+    let id = handle_mutate_result(
+        result,
+        &payload.topic,
+        payload.dry_adc,
+        payload.wet_adc,
+        plant_id_in,
+    )?;
     get_sensor_by_id(id, db)
         .await?
         .ok_or(sqlx::Error::RowNotFound.into())
 }
 
 pub async fn update_sensor(
-    payload: &SensorMutate,
+    payload: &SensorUpdate,
     id: i32,
     db: &PgPool,
 ) -> Result<SensorRecord, SensorMutateError> {
+    let plant_id_in = payload.plant.as_ref().map(|plant| plant.id);
     let result = sqlx::query!(
         r#"
         UPDATE
@@ -139,20 +150,33 @@ pub async fn update_sensor(
             dry_adc = $2,
             wet_adc = $3,
             plant_id = $4,
-            updated_at = NOW()
+            updated_at = NOW(),
+            archived_at =
+                CASE
+                    WHEN $6
+                    THEN COALESCE(archived_at, NOW())
+                    ELSE NULL
+                END
         WHERE
             id = $5
-            AND archived_at IS NULL
+            AND (archived_at IS NULL OR NOT $6)
         "#,
         payload.topic,
         i32::from(payload.dry_adc),
         i32::from(payload.wet_adc),
-        payload.plant.as_ref().map(|plant| plant.id),
-        id
+        plant_id_in,
+        id,
+        payload.archived
     )
     .execute(db)
     .await;
-    let result = handle_mutate_result(result, payload)?;
+    let result = handle_mutate_result(
+        result,
+        &payload.topic,
+        payload.dry_adc,
+        payload.wet_adc,
+        plant_id_in,
+    )?;
     if result.rows_affected() == 0 {
         return Err(SensorMutateError::SensorNotFound { id });
     }

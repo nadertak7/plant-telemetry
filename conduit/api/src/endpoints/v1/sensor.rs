@@ -9,7 +9,9 @@ use axum::{Router, routing::get};
 use crate::AppState;
 use crate::dao;
 use crate::error::AppError;
-use crate::schema::sensor::{SensorListParameters, SensorMutate, SensorRead, SensorRecord};
+use crate::schema::sensor::{
+    SensorCreate, SensorListParameters, SensorRead, SensorRecord, SensorUpdate,
+};
 
 pub fn router() -> Router<Arc<AppState>> {
     Router::new()
@@ -44,7 +46,7 @@ async fn list(
 /// Create a sensor from a given payload.
 async fn create(
     State(state): State<Arc<AppState>>,
-    extract::Json(payload): Json<SensorMutate>,
+    extract::Json(payload): Json<SensorCreate>,
 ) -> Result<(StatusCode, Json<SensorRead>), AppError> {
     let sensor = dao::sensor::create_sensor(&payload, &state.db).await?;
     Ok((StatusCode::CREATED, Json(sensor.into())))
@@ -54,7 +56,7 @@ async fn create(
 async fn update(
     Path(id): Path<i32>,
     State(state): State<Arc<AppState>>,
-    extract::Json(payload): Json<SensorMutate>,
+    extract::Json(payload): Json<SensorUpdate>,
 ) -> Result<(StatusCode, Json<SensorRead>), AppError> {
     let sensor = dao::sensor::update_sensor(&payload, id, &state.db).await?;
     Ok((StatusCode::OK, Json(sensor.into())))

@@ -72,9 +72,19 @@ pub struct SensorListParameters {
 }
 
 #[derive(Deserialize)]
-pub struct SensorMutate {
+pub struct SensorCreate {
     pub topic: String,
     pub dry_adc: u16,
     pub wet_adc: u16,
     pub plant: Option<ObjectWithId>,
+}
+
+#[derive(Deserialize)]
+pub struct SensorUpdate {
+    pub topic: String,
+    pub dry_adc: u16,
+    pub wet_adc: u16,
+    pub plant: Option<ObjectWithId>,
+    #[serde(default)]
+    pub archived: bool,
 }
