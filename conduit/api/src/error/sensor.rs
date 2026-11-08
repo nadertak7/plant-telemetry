@@ -1,11 +1,13 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum SensorCreateError {
+pub enum SensorMutateError {
     #[error("the provided plant id does not exist or is archived: {}", id)]
     PlantNotFound { id: i32 },
+    #[error("the provided sensor id does not exist or is archived: {}", id)]
+    SensorNotFound { id: i32 },
     #[error(
-        "the wet adc value {} must not exceed the dry adc value {}",
+        "the wet adc value {} must be less than dry adc value {}",
         wet_adc,
         dry_adc
     )]

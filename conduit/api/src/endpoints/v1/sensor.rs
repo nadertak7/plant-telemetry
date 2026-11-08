@@ -9,12 +9,12 @@ use axum::{Router, routing::get};
 use crate::AppState;
 use crate::dao;
 use crate::error::AppError;
-use crate::error::sensor::SensorCreateError;
-use crate::schema::sensor::{SensorCreate, SensorListParameters, SensorRead, SensorRecord};
+use crate::error::sensor::SensorMutateError;
+use crate::schema::sensor::{SensorListParameters, SensorMutate, SensorRead, SensorRecord};
 
 pub fn router() -> Router<Arc<AppState>> {
     Router::new()
-        .route("/sensor/{id}", get(read))
+        .route("/sensor/{id}", get(read).put(update))
         .route("/sensor", get(list).post(create))
 }
 
@@ -42,17 +42,37 @@ async fn list(
     Ok(Json(sensors))
 }
 
-/// Create a sensor.
+/// Create a sensor from a given payload.
 async fn create(
     State(state): State<Arc<AppState>>,
-    extract::Json(payload): Json<SensorCreate>,
+    extract::Json(payload): Json<SensorMutate>,
 ) -> Result<(StatusCode, Json<SensorRead>), AppError> {
     if let Some(plant) = &payload.plant {
         let plant_exists = dao::plant::check_active_plant_exists_by_id(plant.id, &state.db).await?;
         if !plant_exists {
-            return Err(SensorCreateError::PlantNotFound { id: plant.id }.into());
+            return Err(SensorMutateError::PlantNotFound { id: plant.id }.into());
         }
     }
     let sensor = dao::sensor::create_sensor(&payload, &state.db).await?;
     Ok((StatusCode::CREATED, Json(sensor.into())))
+}
+
+/// Update an existing sensor with a given payload.
+async fn update(
+    Path(id): Path<i32>,
+    State(state): State<Arc<AppState>>,
+    extract::Json(payload): Json<SensorMutate>,
+) -> Result<(StatusCode, Json<SensorRead>), AppError> {
+    let sensor_exists = dao::sensor::check_active_sensor_exists_by_id(id, &state.db).await?;
+    if !(sensor_exists) {
+        return Err(SensorMutateError::SensorNotFound { id }.into());
+    }
+    if let Some(plant) = &payload.plant {
+        let plant_exists = dao::plant::check_active_plant_exists_by_id(plant.id, &state.db).await?;
+        if !plant_exists {
+            return Err(SensorMutateError::PlantNotFound { id: plant.id }.into());
+        }
+    }
+    let sensor = dao::sensor::update_sensor(&payload, id, &state.db).await?;
+    Ok((StatusCode::OK, Json(sensor.into())))
 }

@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            EXISTS(\n                SELECT\n                    1\n                FROM\n                    sensor\n                WHERE\n                    sensor.id = $1\n                AND\n                    sensor.archived_at IS NULL\n            ) \"exists!\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "exists!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "5fb9e238fd05bbaa7eb7db8b9019af53f07ea577b4939c88ece9f75263ee5272"
+}

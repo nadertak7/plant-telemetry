@@ -4,7 +4,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 
-use crate::error::sensor::SensorCreateError;
+use crate::error::sensor::SensorMutateError;
 
 pub mod sensor;
 
@@ -42,14 +42,15 @@ impl From<sqlx::Error> for AppError {
     }
 }
 
-impl From<SensorCreateError> for AppError {
-    fn from(err: SensorCreateError) -> Self {
+impl From<SensorMutateError> for AppError {
+    fn from(err: SensorMutateError) -> Self {
         match err {
-            SensorCreateError::DuplicateTopic { .. } => AppError::Conflict(err.to_string()),
-            SensorCreateError::InvalidAdc { .. } | SensorCreateError::PlantNotFound { .. } => {
+            SensorMutateError::DuplicateTopic { .. } => AppError::Conflict(err.to_string()),
+            SensorMutateError::InvalidAdc { .. } | SensorMutateError::PlantNotFound { .. } => {
                 AppError::Unprocessable(err.to_string())
             }
-            SensorCreateError::Database(_) => AppError::Internal(err.to_string()),
+            SensorMutateError::SensorNotFound { .. } => AppError::NotFound(err.to_string()),
+            SensorMutateError::Database(_) => AppError::Internal(err.to_string()),
         }
     }
 }

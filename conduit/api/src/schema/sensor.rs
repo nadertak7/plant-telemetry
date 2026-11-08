@@ -64,7 +64,7 @@ pub struct SensorListParameters {
 }
 
 #[derive(Deserialize)]
-pub struct SensorCreate {
+pub struct SensorMutate {
     pub topic: String,
     pub dry_adc: u16,
     pub wet_adc: u16,
