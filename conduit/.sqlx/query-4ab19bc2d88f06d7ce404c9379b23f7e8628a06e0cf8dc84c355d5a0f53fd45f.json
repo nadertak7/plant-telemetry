@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE\n            sensor\n        SET\n            topic = $1,\n            dry_adc = $2,\n            wet_adc = $3,\n            plant_id = $4,\n            updated_at = NOW()\n        WHERE\n            id = $5\n            AND archived_at IS NULL\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4ab19bc2d88f06d7ce404c9379b23f7e8628a06e0cf8dc84c355d5a0f53fd45f"
+}
