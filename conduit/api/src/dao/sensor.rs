@@ -93,7 +93,7 @@ fn handle_mutate_result<T>(
                     _ => {}
                 }
             };
-            return Err(SensorMutateError::Database(e));
+            Err(SensorMutateError::Database(e))
         }
     }
 }
