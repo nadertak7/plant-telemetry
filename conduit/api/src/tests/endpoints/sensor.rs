@@ -58,14 +58,22 @@ fn archived_expected_json() -> Value {
     )
 }
 
+const ACTIVE_WITH_PLANT_SENSOR_ID: i32 = 1;
+const ACTIVE_WITH_ARCHIVED_PLANT_SENSOR_ID: i32 = 2;
+const ACTIVE_WITHOUT_PLANT_SENSOR_ID: i32 = 3;
+const ARCHIVED_SENSOR_ID: i32 = 4;
+
 /// Assert sensor view endpoint responses against expected outputs.
 #[rstest]
-#[case::active_with_plant(1, sensor_id_1_expected_json())]
-#[case::active_with_archived_plant(2, archived_plant_expected_json())]
-#[case::active_without_plant(3, no_plant_expected_json())]
-#[case::archived(4, archived_expected_json())]
+#[case::active_with_plant(ACTIVE_WITH_PLANT_SENSOR_ID, sensor_id_1_expected_json())]
+#[case::active_with_archived_plant(
+    ACTIVE_WITH_ARCHIVED_PLANT_SENSOR_ID,
+    archived_plant_expected_json()
+)]
+#[case::active_without_plant(ACTIVE_WITHOUT_PLANT_SENSOR_ID, no_plant_expected_json())]
+#[case::archived(ARCHIVED_SENSOR_ID, archived_expected_json())]
 #[sqlx::test(migrator = "MIGRATOR", fixtures("plant", "sensor"))]
-async fn test_view_sensor(#[case] id: u16, #[case] expected_json: Value, #[ignore] pool: PgPool) {
+async fn test_view_sensor(#[case] id: i32, #[case] expected_json: Value, #[ignore] pool: PgPool) {
     let response = common::server(pool)
         .get(&format!("/v1/sensor/{}", id))
         .await;
@@ -246,25 +254,25 @@ async fn test_update_sensor_with_existing_topic(pool: PgPool) {
 
 /// Ensure that the archive status of a sensor is changed when updated.
 #[rstest]
-#[case::active_sensor_request_archive(1, json!({ "topic": "sensor/active_with_plant", "dry_adc": 500, "wet_adc": 100, "archived": true }), StatusCode::OK)]
-#[case::active_sensor_request_active(1, json!({ "topic": "sensor/active_with_plant", "dry_adc": 500, "wet_adc": 100, "archived": false }), StatusCode::OK)]
-#[case::archived_sensor_request_archive(4, json!({ "topic": "sensor/archived", "dry_adc": 500, "wet_adc": 100, "archived": true }), StatusCode::NOT_FOUND)]
-#[case::archived_sensor_request_active(4, json!({ "topic": "sensor/archived", "dry_adc": 500, "wet_adc": 100, "archived": false }), StatusCode::OK)]
+#[case::archive_active(ACTIVE_WITH_PLANT_SENSOR_ID, true, StatusCode::OK)]
+#[case::keep_active(ACTIVE_WITH_PLANT_SENSOR_ID, false, StatusCode::OK)]
+#[case::edit_archived(ARCHIVED_SENSOR_ID, true, StatusCode::NOT_FOUND)]
+#[case::restore_archived(ARCHIVED_SENSOR_ID, false, StatusCode::OK)]
 #[sqlx::test(migrator = "MIGRATOR", fixtures("plant", "sensor"))]
 async fn test_update_sensor_archive_status(
     #[case] id: i32,
-    #[case] body: Value,
+    #[case] request_archive_state: bool,
     #[case] expected_status_code: StatusCode,
     #[ignore] pool: PgPool,
 ) {
     let response = common::server(pool)
         .put(&format!("/v1/sensor/{}", id))
-        .json(&body)
+        .json(&json!( { "topic": "sensor/update", "dry_adc": 500, "wet_adc": 100, "archived": request_archive_state }))
         .await;
 
     response.assert_status(expected_status_code);
     if expected_status_code == StatusCode::OK {
-        if &body["archived"] == true {
+        if request_archive_state {
             response.assert_json_contains(&json!({ "archived_at": expect_json::iso_date_time() }));
         } else {
             response.assert_json_contains(&json!({ "archived_at": null }));
