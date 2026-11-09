@@ -1,6 +1,6 @@
 use anyhow::Context;
 use rumqttc::{AsyncClient, EventLoop};
-use shared::settings::MqttSettings;
+use shared::settings::{MqttSettings, Settings};
 
 /// Create a client for sending MQTT requests and an event loop that drives communication with the
 /// broker service.

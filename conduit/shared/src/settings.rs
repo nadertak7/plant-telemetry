@@ -5,16 +5,32 @@ use std::fs;
 use std::path::Path;
 use std::{env, time::Duration};
 
+pub trait Settings: Sized {
+    type ConnectOptions;
+
+    fn connect_options(&self) -> Self::ConnectOptions;
+    fn new() -> anyhow::Result<Self>;
+}
+
 pub struct DatabaseSettings {
     database_url: String,
     pub max_connections: u32,
 }
 
-impl DatabaseSettings {
-    pub fn connect_options(&self) -> anyhow::Result<PgConnectOptions> {
+impl Settings for DatabaseSettings {
+    type ConnectOptions = anyhow::Result<PgConnectOptions>;
+
+    fn connect_options(&self) -> Self::ConnectOptions {
         self.database_url
             .parse()
             .context("Failed to parse database URL.")
+    }
+
+    fn new() -> anyhow::Result<Self> {
+        Ok(DatabaseSettings {
+            database_url: read_secret("postgres_database_url")?,
+            max_connections: 5,
+        })
     }
 }
 
@@ -30,19 +46,30 @@ pub struct MqttSettings {
     pub quality_of_service: QoS,
 }
 
-impl MqttSettings {
-    pub fn connect_options(&self) -> MqttOptions {
+impl Settings for MqttSettings {
+    type ConnectOptions = MqttOptions;
+
+    fn connect_options(&self) -> Self::ConnectOptions {
         let mut mqtt_options = MqttOptions::new(&self.id, &self.host, self.port);
         mqtt_options
             .set_credentials(&self.username, &self.password)
             .set_keep_alive(self.keep_alive_seconds);
         mqtt_options
     }
-}
 
-pub struct Settings {
-    pub database_settings: DatabaseSettings,
-    pub mqtt_settings: MqttSettings,
+    fn new() -> anyhow::Result<Self> {
+        Ok(MqttSettings {
+            id: "conduit-consumer".to_string(),
+            host: env::var("MQTT_HOST").context("Could not find MQTT_HOST in environment.")?,
+            port: 1883,
+            username: read_secret("mqtt_username")?,
+            password: read_secret("mqtt_password")?,
+            subscribe_topic: "sensor/+".to_string(),
+            keep_alive_seconds: Duration::from_secs(60),
+            request_queue_capacity: 10,
+            quality_of_service: QoS::AtMostOnce,
+        })
+    }
 }
 
 /// Read the value of a secret file stored in /run/secrets/
@@ -54,26 +81,4 @@ fn read_secret(name: &str) -> anyhow::Result<String> {
             secret_filepath.display()
         )
     })
-}
-
-impl Settings {
-    pub fn new() -> anyhow::Result<Settings> {
-        Ok(Settings {
-            database_settings: DatabaseSettings {
-                database_url: read_secret("postgres_database_url")?,
-                max_connections: 5,
-            },
-            mqtt_settings: MqttSettings {
-                id: "conduit-consumer".to_string(),
-                host: env::var("MQTT_HOST").context("Could not find MQTT_HOST in environment.")?,
-                port: 1883,
-                username: read_secret("mqtt_username")?,
-                password: read_secret("mqtt_password")?,
-                subscribe_topic: "sensor/+".to_string(),
-                keep_alive_seconds: Duration::from_secs(60),
-                request_queue_capacity: 10,
-                quality_of_service: QoS::AtMostOnce,
-            },
-        })
-    }
 }

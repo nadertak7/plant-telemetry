@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                topic,\n                dry_adc,\n                wet_adc,\n                plant_id \"plant_id?\"\n            FROM\n                sensor\n            WHERE\n                sensor.id = $1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "topic",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "sensor",
+            "name": "topic"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "dry_adc",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "sensor",
+            "name": "dry_adc"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "wet_adc",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "sensor",
+            "name": "wet_adc"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "plant_id?",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "sensor",
+            "name": "plant_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "156c2189266da5c87ecccb3970c7ea80091ff35e1fa97734c053726663c514a5"
+}
